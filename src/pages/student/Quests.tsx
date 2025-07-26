@@ -1,4 +1,4 @@
-import { ArrowLeft, Target, Clock, Trophy, CheckCircle, PlayCircle } from "lucide-react";
+import { ArrowLeft, Target, Clock, Trophy, CheckCircle, PlayCircle, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -6,6 +6,21 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 
 const Quests = () => {
+  const featuredQuest = {
+    id: 0,
+    title: "Business & Management Quiz",
+    description: "Test your knowledge with 4 multiple-choice questions and earn your first badge!",
+    xp: 150,
+    difficulty: "Medium",
+    category: "Quiz",
+    status: "available",
+    progress: 0,
+    timeEstimate: "10 mins",
+    dueDate: "No deadline",
+    isFeatured: true,
+    badge: "🎯"
+  };
+
   const quests = [
     {
       id: 1,
@@ -106,12 +121,62 @@ const Quests = () => {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-primary">
               Your Quests 🎯
             </h1>
             <p className="text-muted-foreground">Complete quests to earn XP and unlock badges</p>
           </div>
         </div>
+
+        {/* Featured Quest */}
+        <Card className="shadow-primary border-2 border-primary/30 bg-gradient-accent/10">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white text-xl">
+                  <Star className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <CardTitle className="text-xl text-primary">Featured Quest</CardTitle>
+                    <Badge className="bg-primary text-primary-foreground">NEW</Badge>
+                  </div>
+                  <CardTitle className="text-lg">{featuredQuest.title}</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">{featuredQuest.description}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-primary">{featuredQuest.xp} XP</div>
+                <div className="text-lg">{featuredQuest.badge}</div>
+              </div>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap gap-2 items-center">
+              <Badge className={getDifficultyColor(featuredQuest.difficulty)}>
+                {featuredQuest.difficulty}
+              </Badge>
+              <Badge variant="outline">{featuredQuest.category}</Badge>
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                {featuredQuest.timeEstimate}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {featuredQuest.dueDate}
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Link to="/student/business-quiz">
+                <Button className="bg-primary hover:bg-primary/90" size="lg">
+                  <PlayCircle className="h-5 w-5 mr-2" />
+                  Start Quiz
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Stats Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -148,6 +213,7 @@ const Quests = () => {
 
         {/* Quest List */}
         <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-primary">All Quests</h2>
           {quests.map((quest) => (
             <Card key={quest.id} className="shadow-card hover:shadow-primary/20 transition-all duration-300">
               <CardHeader>
@@ -203,11 +269,11 @@ const Quests = () => {
                       Completed
                     </Button>
                   ) : quest.status === "in-progress" ? (
-                    <Button className="bg-gradient-primary hover:opacity-90">
+                    <Button className="bg-primary hover:bg-primary/90">
                       Continue Quest
                     </Button>
                   ) : (
-                    <Button className="bg-gradient-primary hover:opacity-90">
+                    <Button className="bg-primary hover:bg-primary/90">
                       <PlayCircle className="h-4 w-4 mr-2" />
                       Start Quest
                     </Button>
