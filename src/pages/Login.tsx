@@ -116,7 +116,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-white">
       {/* Back button */}
       <div className="absolute top-4 left-4 z-20">
         <Link to="/">

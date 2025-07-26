@@ -3,11 +3,13 @@ import type { User } from '@supabase/supabase-js';
 
 // Types matching the new schema
 export interface UserProfile {
-  id: string;
+  id?: string;
+  user_id?: string;
   email: string;
-  name: string | null;
+  name?: string | null;
+  full_name?: string | null;
   role: 'student' | 'professor';
-  avatar_url: string | null;
+  avatar_url?: string | null;
   created_at: string;
 }
 
@@ -83,8 +85,30 @@ export const authService = {
   },
 
   async getCurrentUser() {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    return { user, error };
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { user, profile: null, error: authError };
+    }
+
+    // Get the user profile from profiles table
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    // If not found in profiles, try users table as fallback
+    if (profileError) {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      return { user, profile: userData, error: userError };
+    }
+
+    return { user, profile, error: null };
   },
 
   async getCurrentSession() {
@@ -96,15 +120,27 @@ export const authService = {
 // User Services
 export const userService = {
   async getUserProfile(userId: string): Promise<UserProfile | null> {
-    const { data, error } = await supabase
-      .from('users')
+    // Try profiles table first
+    let { data, error } = await supabase
+      .from('profiles')
       .select('*')
-      .eq('id', userId)
+      .eq('user_id', userId)
       .single();
 
+    // If not found in profiles, try users table as fallback
     if (error) {
-      console.error('Error fetching user profile:', error);
-      return null;
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (userError) {
+        console.error('Error fetching user profile:', userError);
+        return null;
+      }
+
+      return userData;
     }
 
     return data;
@@ -140,16 +176,29 @@ export const userService = {
   },
 
   async updateUserProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile | null> {
-    const { data, error } = await supabase
-      .from('users')
+    // Try to update profiles table first
+    let { data, error } = await supabase
+      .from('profiles')
       .update(updates)
-      .eq('id', userId)
+      .eq('user_id', userId)
       .select()
       .single();
 
+    // If profiles table doesn't exist or update fails, try users table
     if (error) {
-      console.error('Error updating user profile:', error);
-      return null;
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (userError) {
+        console.error('Error updating user profile:', userError);
+        return null;
+      }
+
+      return userData;
     }
 
     return data;
