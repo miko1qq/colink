@@ -38,10 +38,11 @@ const Index = () => {
 
           {/* Role Selection */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto mt-12">
+            {/* Student Card */}
             <Link to="/login?role=student">
               <Card className="bg-white shadow-lg hover:shadow-primary/30 transition-all duration-300 hover:scale-105 cursor-pointer h-full border-2 border-transparent hover:border-primary/20">
                 <CardHeader className="text-center pb-4">
-                  <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-primary">
                     <Trophy className="h-10 w-10 text-white" />
                   </div>
                   <CardTitle className="text-2xl text-primary">I'm a Student</CardTitle>
@@ -64,17 +65,20 @@ const Index = () => {
                       <span>Compete on Leaderboards</span>
                     </div>
                   </div>
-                  <Button className="w-full bg-primary hover:bg-primary/90 text-white" size="lg">
-                    Enter as Student
-                  </Button>
+                  <div className="space-y-2">
+                    <Button className="w-full bg-primary hover:bg-primary/90 text-white" size="lg">
+                      Enter as Student
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </Link>
 
+            {/* Professor Card */}
             <Link to="/login?role=professor">
               <Card className="bg-white shadow-lg hover:shadow-primary/30 transition-all duration-300 hover:scale-105 cursor-pointer h-full border-2 border-transparent hover:border-primary/20">
                 <CardHeader className="text-center pb-4">
-                  <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-primary">
                     <Users className="h-10 w-10 text-white" />
                   </div>
                   <CardTitle className="text-2xl text-primary">I'm a Professor</CardTitle>
@@ -97,9 +101,11 @@ const Index = () => {
                       <span>Track Student Analytics</span>
                     </div>
                   </div>
-                  <Button className="w-full bg-primary hover:bg-primary/90 text-white" size="lg">
-                    Enter as Professor
-                  </Button>
+                  <div className="space-y-2">
+                    <Button className="w-full bg-primary hover:bg-primary/90 text-white" size="lg">
+                      Enter as Professor
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </Link>
