@@ -156,7 +156,7 @@ const Analytics = () => {
 
   if (!profile || profile.role !== 'professor') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-white flex items-center justify-center">
         <Alert className="max-w-md">
           <AlertDescription>
             Access denied. This page is only available to professors.
@@ -168,7 +168,7 @@ const Analytics = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading analytics...</p>
@@ -195,7 +195,7 @@ const Analytics = () => {
   const COLORS = ['#0388FC', '#0EA5E9', '#06B6D4', '#10B981', '#84CC16'];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-white pb-20">
       <div className="max-w-6xl mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">

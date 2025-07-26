@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/lib/supabaseClient";
-import { profileService } from "@/lib/supabaseService";
+// Removed unused import
 import { useUser } from "@/hooks/useUser";
 import { useToast } from "@/hooks/use-toast";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
@@ -448,7 +448,7 @@ const ProfessorProfile = () => {
               </div>
               
               <div className="text-center group">
-                <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center text-2xl hover:shadow-lg transition-all duration-300 group-hover:scale-110">
+                <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-primary/10 to-primary/20 rounded-full flex items-center justify-center text-2xl hover:shadow-lg transition-all duration-300 group-hover:scale-110">
                   📚
                 </div>
                 <h4 className="font-medium text-sm mb-1">Innovation in Teaching</h4>

@@ -131,9 +131,9 @@ const TopRightNavigation = () => {
             className="p-1 h-8 w-8 rounded-full hover:ring-2 hover:ring-primary/20"
           >
             <Avatar className="h-6 w-6">
-              <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} />
+              <AvatarImage src={profile?.avatar_url} alt={profile?.full_name || profile?.name} />
               <AvatarFallback className="text-xs bg-primary text-white">
-                {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                {(profile?.full_name || profile?.name || 'User').split(' ').map(n => n[0]).join('')}
               </AvatarFallback>
             </Avatar>
           </Button>
@@ -141,7 +141,7 @@ const TopRightNavigation = () => {
         <PopoverContent className="w-48 p-2 bg-white border-primary/20" align="end">
           <div className="space-y-1">
             <div className="px-2 py-1 text-sm text-muted-foreground border-b">
-              {profile?.full_name}
+              {profile?.full_name || profile?.name || 'User'}
             </div>
             <Button 
               variant="ghost" 

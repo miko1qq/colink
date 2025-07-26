@@ -120,17 +120,30 @@ export const useUser = () => {
       setLoading(true);
       
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}.${fileExt}`;
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
+      // Try to upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, {
           upsert: true
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        // If storage upload fails, convert to base64 and store in profile
+        const reader = new FileReader();
+        return new Promise((resolve) => {
+          reader.onload = async () => {
+            const base64 = reader.result as string;
+            await updateProfile({ avatar_url: base64 });
+            resolve(base64);
+          };
+          reader.readAsDataURL(file);
+        });
+      }
 
+      // If storage upload succeeds, get public URL
       const { data } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);

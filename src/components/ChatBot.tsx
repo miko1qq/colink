@@ -85,7 +85,7 @@ If you're unsure, suggest visiting the official website or contacting university
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg hover:bg-blue-700 transition cursor-move"
+          className="bg-primary text-white px-4 py-2 rounded-full shadow-lg hover:bg-primary/90 transition cursor-move"
         >
           💬 Have questions? Ask the chatbot
         </button>
@@ -116,7 +116,7 @@ If you're unsure, suggest visiting the official website or contacting university
                 </button>
                 <button
                   onClick={() => setFullScreen((f) => !f)}
-                  className="text-sm text-blue-600 hover:underline"
+                  className="text-sm text-primary hover:underline"
                 >
                   {fullScreen ? "Minimize" : "Fullscreen"}
                 </button>
@@ -136,7 +136,7 @@ If you're unsure, suggest visiting the official website or contacting university
                   key={i}
                   className={`max-w-[80%] px-4 py-2 rounded-2xl whitespace-pre-wrap break-words shadow-sm ${
                     msg.sender === "user"
-                      ? "ml-auto bg-blue-100 text-blue-900"
+                      ? "ml-auto bg-primary/10 text-primary"
                       : "mr-auto bg-gray-200 text-gray-900"
                   }`}
                 >
@@ -178,7 +178,7 @@ If you're unsure, suggest visiting the official website or contacting university
               <button
                 onClick={handleSend}
                 disabled={loading}
-                className="bg-blue-500 text-white px-3 py-1 rounded disabled:opacity-50"
+                className="bg-primary text-white px-3 py-1 rounded disabled:opacity-50"
               >
                 {loading ? "..." : "Send"}
               </button>

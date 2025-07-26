@@ -217,7 +217,7 @@ const Quests = () => {
       case 'completed':
         return 'bg-green-100 text-green-800';
       case 'in_progress':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary/10 text-primary';
       case 'overdue':
         return 'bg-red-100 text-red-800';
       default:
@@ -242,7 +242,7 @@ const Quests = () => {
 
   if (!profile || profile.role !== 'student') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-white flex items-center justify-center">
         <Alert className="max-w-md">
           <AlertDescription>
             Access denied. This page is only available to students.
@@ -254,7 +254,7 @@ const Quests = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading quests...</p>
@@ -270,7 +270,7 @@ const Quests = () => {
   }, 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-white pb-20">
       <div className="max-w-6xl mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
