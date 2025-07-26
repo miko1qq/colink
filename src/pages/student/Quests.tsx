@@ -1,14 +1,31 @@
-import { ArrowLeft, Target, Clock, Trophy, CheckCircle, PlayCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowLeft, Target, Clock, Trophy, CheckCircle, PlayCircle, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
+import { supabase } from "@/lib/supabaseClient";
+import Quiz from "@/components/Quiz";
+import BadgeModal from "@/components/BadgeModal";
 
 const Quests = () => {
-  const quests = [
+  const [quests, setQuests] = useState([
     {
       id: 1,
+      title: "Business & Management Quiz",
+      description: "Test your knowledge of business fundamentals and management principles",
+      xp: 200,
+      difficulty: "Medium",
+      category: "Quiz",
+      status: "available",
+      progress: 0,
+      timeEstimate: "15 mins",
+      dueDate: "2024-01-25",
+      type: "quiz"
+    },
+    {
+      id: 2,
       title: "Complete Computer Science Assignment",
       description: "Submit your final project on data structures and algorithms",
       xp: 150,
@@ -17,10 +34,11 @@ const Quests = () => {
       status: "in-progress",
       progress: 75,
       timeEstimate: "2 hours",
-      dueDate: "2024-01-25"
+      dueDate: "2024-01-25",
+      type: "assignment"
     },
     {
-      id: 2,
+      id: 3,
       title: "Attend Virtual Lab Session",
       description: "Join the weekly virtual laboratory session for practical learning",
       xp: 100,
@@ -29,10 +47,11 @@ const Quests = () => {
       status: "available",
       progress: 0,
       timeEstimate: "1 hour",
-      dueDate: "2024-01-22"
+      dueDate: "2024-01-22",
+      type: "attendance"
     },
     {
-      id: 3,
+      id: 4,
       title: "Participate in Group Discussion",
       description: "Contribute meaningfully to the forum discussion on modern software development",
       xp: 80,
@@ -41,10 +60,11 @@ const Quests = () => {
       status: "in-progress",
       progress: 50,
       timeEstimate: "30 mins",
-      dueDate: "2024-01-24"
+      dueDate: "2024-01-24",
+      type: "discussion"
     },
     {
-      id: 4,
+      id: 5,
       title: "Research Paper Review",
       description: "Read and analyze the assigned research paper on machine learning applications",
       xp: 200,
@@ -53,21 +73,68 @@ const Quests = () => {
       status: "available",
       progress: 0,
       timeEstimate: "3 hours",
-      dueDate: "2024-01-28"
-    },
-    {
-      id: 5,
-      title: "Team Project Milestone",
-      description: "Complete the first milestone of your group project",
-      xp: 180,
-      difficulty: "Medium",
-      category: "Teamwork",
-      status: "completed",
-      progress: 100,
-      timeEstimate: "4 hours",
-      dueDate: "2024-01-20"
+      dueDate: "2024-01-28",
+      type: "research"
     }
-  ];
+  ]);
+
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [showBadgeModal, setShowBadgeModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    // Get current user
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+    };
+    getUser();
+  }, []);
+
+  const handleQuizComplete = async (score: number, totalQuestions: number) => {
+    // Update quest status
+    const updatedQuests = quests.map(quest => 
+      quest.id === 1 ? { ...quest, status: "completed", progress: 100 } : quest
+    );
+    setQuests(updatedQuests);
+
+    // Save to Supabase
+    if (currentUser) {
+      const { error } = await supabase
+        .from('quest_completions')
+        .upsert({
+          user_id: currentUser.id,
+          quest_id: 1,
+          completed_at: new Date().toISOString(),
+          score: score,
+          total_questions: totalQuestions
+        });
+
+      if (error) {
+        console.error('Error saving quest completion:', error);
+      }
+    }
+
+    // Show badge modal if score is good enough
+    if (score >= 3) {
+      setShowBadgeModal(true);
+    }
+
+    setShowQuiz(false);
+  };
+
+  const handleStartQuest = (questId: number) => {
+    const quest = quests.find(q => q.id === questId);
+    if (quest?.type === "quiz") {
+      setShowQuiz(true);
+    } else {
+      // Handle other quest types
+      const updatedQuests = quests.map(q => 
+        q.id === questId ? { ...q, status: "in-progress" } : q
+      );
+      setQuests(updatedQuests);
+    }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -106,7 +173,7 @@ const Quests = () => {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-[#003A70]">
               Your Quests 🎯
             </h1>
             <p className="text-muted-foreground">Complete quests to earn XP and unlock badges</p>
@@ -203,13 +270,28 @@ const Quests = () => {
                       Completed
                     </Button>
                   ) : quest.status === "in-progress" ? (
-                    <Button className="bg-gradient-primary hover:opacity-90">
+                    <Button 
+                      className="bg-[#003A70] hover:bg-[#002A50] text-white"
+                      onClick={() => handleStartQuest(quest.id)}
+                    >
                       Continue Quest
                     </Button>
                   ) : (
-                    <Button className="bg-gradient-primary hover:opacity-90">
-                      <PlayCircle className="h-4 w-4 mr-2" />
-                      Start Quest
+                    <Button 
+                      className="bg-[#003A70] hover:bg-[#002A50] text-white"
+                      onClick={() => handleStartQuest(quest.id)}
+                    >
+                      {quest.type === "quiz" ? (
+                        <>
+                          <BookOpen className="h-4 w-4 mr-2" />
+                          Start Quiz
+                        </>
+                      ) : (
+                        <>
+                          <PlayCircle className="h-4 w-4 mr-2" />
+                          Start Quest
+                        </>
+                      )}
                     </Button>
                   )}
                 </div>
@@ -218,6 +300,23 @@ const Quests = () => {
           ))}
         </div>
       </div>
+
+      {/* Quiz Modal */}
+      {showQuiz && (
+        <Quiz
+          onComplete={handleQuizComplete}
+          onClose={() => setShowQuiz(false)}
+        />
+      )}
+
+      {/* Badge Modal */}
+      <BadgeModal
+        isOpen={showBadgeModal}
+        onClose={() => setShowBadgeModal(false)}
+        badgeName="Business Management Expert"
+        badgeDescription="Successfully completed the Business & Management quiz with excellent performance!"
+        badgeIcon="🏆"
+      />
     </div>
   );
 };

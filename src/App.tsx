@@ -16,6 +16,7 @@ import Badges from "./pages/student/Badges";
 import Leaderboard from "./pages/student/Leaderboard";
 import Profile from "./pages/shared/Profile";
 import Messaging from "./pages/shared/Messaging";
+import FAQ from "./pages/shared/FAQ";
 import QuestBuilder from "./pages/professor/QuestBuilder";
 import Analytics from "./pages/professor/Analytics";
 import NotFound from "./pages/NotFound";
@@ -57,6 +58,7 @@ const App = () => (
               {/* Shared */}
               <Route path="/profile" element={<Profile />} />
               <Route path="/messaging" element={<Messaging />} />
+              <Route path="/faq" element={<FAQ />} />
 
               {/* Not Found */}
               <Route path="*" element={<NotFound />} />

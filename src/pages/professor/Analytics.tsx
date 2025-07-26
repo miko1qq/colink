@@ -148,7 +148,7 @@ const Analytics = () => {
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold text-[#003A70]">
                 Analytics Dashboard 📊
               </h1>
               <p className="text-muted-foreground">Track student engagement and quest performance</p>

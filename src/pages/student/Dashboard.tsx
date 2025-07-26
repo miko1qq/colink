@@ -36,7 +36,7 @@ const StudentDashboard = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
+          <h1 className="text-3xl font-bold text-[#003A70] mb-2">
             Welcome back, {studentData.name}! 🎯
           </h1>
           <p className="text-muted-foreground">Ready to continue your learning journey?</p>

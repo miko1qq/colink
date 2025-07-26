@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 const QuestBuilder = () => {
   const [questData, setQuestData] = useState({
@@ -26,6 +27,17 @@ const QuestBuilder = () => {
   });
 
   const [currentTag, setCurrentTag] = useState("");
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    // Get current user
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+    };
+    getUser();
+  }, []);
 
   const categories = [
     "Academic Assignment",
@@ -78,9 +90,55 @@ const QuestBuilder = () => {
     }));
   };
 
-  const handleSaveQuest = () => {
-    // Save quest logic here
-    console.log("Saving quest:", questData);
+  const handleSaveQuest = async () => {
+    if (!currentUser) return;
+    
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('quests')
+        .insert({
+          title: questData.title,
+          description: questData.description,
+          category: questData.category,
+          difficulty: questData.difficulty,
+          xp_reward: questData.xpReward,
+          time_estimate: questData.timeEstimate,
+          due_date: questData.dueDate,
+          instructions: questData.instructions,
+          is_active: questData.isActive,
+          assigned_students: questData.assignedStudents,
+          tags: questData.tags,
+          created_by: currentUser.id,
+          created_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('Error saving quest:', error);
+        alert('Failed to save quest. Please try again.');
+      } else {
+        alert('Quest saved successfully!');
+        // Reset form
+        setQuestData({
+          title: "",
+          description: "",
+          category: "",
+          difficulty: "",
+          xpReward: 100,
+          timeEstimate: "",
+          dueDate: "",
+          instructions: "",
+          isActive: true,
+          assignedStudents: "all",
+          tags: []
+        });
+      }
+    } catch (error) {
+      console.error('Error saving quest:', error);
+      alert('Failed to save quest. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDifficultyChange = (difficulty: string) => {
@@ -104,7 +162,7 @@ const QuestBuilder = () => {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-[#003A70]">
               Quest Builder 🎯
             </h1>
             <p className="text-muted-foreground">Create engaging learning experiences for your students</p>
@@ -374,11 +432,11 @@ const QuestBuilder = () => {
             <div className="space-y-3">
               <Button
                 onClick={handleSaveQuest}
-                className="w-full bg-gradient-primary hover:opacity-90"
-                disabled={!questData.title || !questData.description}
+                className="w-full bg-[#003A70] hover:bg-[#002A50] text-white"
+                disabled={!questData.title || !questData.description || isSaving}
               >
                 <Save className="h-4 w-4 mr-2" />
-                {questData.isActive ? "Create & Activate Quest" : "Save as Draft"}
+                {isSaving ? "Saving..." : (questData.isActive ? "Create & Activate Quest" : "Save as Draft")}
               </Button>
               
               <Button variant="outline" className="w-full">
