@@ -12,12 +12,14 @@ import Index from "./pages/Index";
 import StudentDashboard from "./pages/student/Dashboard";
 import ProfessorDashboard from "./pages/professor/Dashboard";
 import Quests from "./pages/student/Quests";
+import BusinessQuizPage from "./pages/student/BusinessQuizPage";
 import Badges from "./pages/student/Badges";
 import Leaderboard from "./pages/student/Leaderboard";
 import Profile from "./pages/shared/Profile";
 import Messaging from "./pages/shared/Messaging";
 import QuestBuilder from "./pages/professor/QuestBuilder";
 import Analytics from "./pages/professor/Analytics";
+import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -42,10 +44,12 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/faq" element={<FAQ />} />
 
               {/* Student */}
               <Route path="/student/dashboard" element={<StudentDashboard />} />
               <Route path="/student/quests" element={<Quests />} />
+              <Route path="/student/business-quiz" element={<BusinessQuizPage />} />
               <Route path="/student/badges" element={<Badges />} />
               <Route path="/student/leaderboard" element={<Leaderboard />} />
 

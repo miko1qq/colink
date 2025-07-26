@@ -24,6 +24,15 @@ const Analytics = () => {
 
   const questAnalytics = [
     {
+      title: "Business & Management Quiz",
+      completion: 89,
+      avgTime: "12m",
+      avgScore: 85,
+      dropOffRate: 11,
+      students: 34,
+      feedback: "Excellent"
+    },
+    {
       title: "Computer Science Assignment",
       completion: 85,
       avgTime: "2.5h",
@@ -132,7 +141,7 @@ const Analytics = () => {
     const ws2 = XLSX.utils.aoa_to_sheet(questData);
     XLSX.utils.book_append_sheet(wb, ws2, 'Quest Analytics');
     
-    XLSX.writeFile(wb, `analytics_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.writeFile(wb, `CoLink_Analytics_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   return (
@@ -148,7 +157,7 @@ const Analytics = () => {
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold text-primary">
                 Analytics Dashboard 📊
               </h1>
               <p className="text-muted-foreground">Track student engagement and quest performance</p>
@@ -171,7 +180,7 @@ const Analytics = () => {
               <Filter className="h-4 w-4 mr-2" />
               Filter
             </Button>
-            <Button onClick={exportToExcel} className="bg-primary hover:bg-primary-hover">
+            <Button onClick={exportToExcel} className="bg-primary hover:bg-primary/90">
               <Download className="h-4 w-4 mr-2" />
               Export to Excel
             </Button>
@@ -403,10 +412,10 @@ const Analytics = () => {
                     
                     <div>
                       <div className="flex justify-between text-sm mb-1">
-                        <span>Game Participation</span>
-                        <span className="text-red-600">↓ 3%</span>
+                        <span>Quiz Participation</span>
+                        <span className="text-green-600">↑ 15%</span>
                       </div>
-                      <Progress value={72} className="h-2" />
+                      <Progress value={89} className="h-2" />
                     </div>
                   </div>
                 </CardContent>
