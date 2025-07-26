@@ -2,7 +2,7 @@ import logo from "@/assets/logo.png";
 import { Moon, Sun, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TopRightNavigation from "../TopRightNavigation";
-import { useTheme } from "next-themes"; 
+import { useTheme } from "@/components/theme-provider"; 
 
 const TopBar = () => {
   const { theme, setTheme } = useTheme();
