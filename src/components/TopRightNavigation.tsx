@@ -84,39 +84,65 @@ const TopRightNavigation = () => {
 
   return (
     <div className="flex items-center gap-2">
-      {/* Search */}
+      {/* Search - SINGLE search input */}
       <Dialog>
         <DialogTrigger asChild>
           <Button
             variant="ghost"
             size="icon"
-            className="text-muted-foreground"
+            className="text-muted-foreground hover:text-primary"
           >
             <Search className="w-4 h-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
-          <h2 className="text-lg font-semibold mb-2">Search</h2>
+        <DialogContent className="sm:max-w-md bg-white">
+          <h2 className="text-lg font-semibold mb-2 text-primary">Search</h2>
           <Input
-            placeholder="Search anything..."
-            className="dark:bg-neutral-900"
+            placeholder="Search quests, students, courses..."
+            className="border-primary/20 focus:border-primary"
           />
         </DialogContent>
       </Dialog>
 
-      {/* Notifications */}
+      {/* Profile Menu */}
       <Popover>
         <PopoverTrigger asChild>
           <Button
             variant="ghost"
             size="icon"
-            className="relative text-muted-foreground"
+            className="text-muted-foreground hover:text-primary"
+          >
+            <User className="w-4 h-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-48 p-2 bg-white border-primary/20" align="end">
+          <div className="space-y-1">
+            <Button variant="ghost" className="w-full justify-start text-sm">
+              Profile
+            </Button>
+            <Button variant="ghost" className="w-full justify-start text-sm">
+              Settings
+            </Button>
+            <Button variant="ghost" className="w-full justify-start text-sm text-red-600">
+              Logout
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      {/* Notifications - TOP-RIGHT ONLY */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative text-muted-foreground hover:text-primary"
           >
             <Bell className="w-4 h-4" />
             {notifications.some((n) => !n.read) && (
               <Badge
                 variant="destructive"
-                className="absolute -top-1 -right-1 h-5 w-5 text-xs flex items-center justify-center p-0"
+                className="absolute -top-1 -right-1 h-5 w-5 text-xs flex items-center justify-center p-0 bg-primary text-white"
               >
                 {
                   notifications.filter((n) => !n.read).length > 9
@@ -127,13 +153,13 @@ const TopRightNavigation = () => {
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 p-0 dark:bg-neutral-900">
-          <div className="flex justify-between items-center p-2 border-b dark:border-neutral-700">
-            <p className="text-sm font-semibold">Notifications</p>
+        <PopoverContent className="w-80 p-0 bg-white border-primary/20" align="end">
+          <div className="flex justify-between items-center p-3 border-b border-border">
+            <p className="text-sm font-semibold text-primary">Notifications</p>
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs"
+              className="text-xs text-muted-foreground hover:text-primary"
               onClick={() =>
                 setNotifications((prev) =>
                   prev.map((n) => ({ ...n, read: true }))
@@ -145,20 +171,20 @@ const TopRightNavigation = () => {
           </div>
           <ScrollArea className="h-64 p-2">
             {notifications.length === 0 ? (
-              <div className="text-center text-sm text-muted-foreground">
+              <div className="text-center text-sm text-muted-foreground py-8">
                 No notifications
               </div>
             ) : (
               notifications.map((n) => (
                 <div
                   key={n.id}
-                  className={`flex items-start gap-2 p-2 rounded-md hover:bg-muted transition ${
+                  className={`flex items-start gap-2 p-3 rounded-md hover:bg-accent transition-colors cursor-pointer ${
                     n.read ? "opacity-60" : ""
                   }`}
                 >
                   <div className="pt-1">{CATEGORY_ICONS[n.category]}</div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium">{n.title}</p>
+                    <p className="text-sm font-medium text-foreground">{n.title}</p>
                     <p className="text-xs text-muted-foreground">
                       {dayjs(n.created_at).fromNow()}
                     </p>
@@ -168,9 +194,9 @@ const TopRightNavigation = () => {
                       onClick={() => markAsRead(n.id)}
                       variant="ghost"
                       size="sm"
-                      className="text-xs px-2"
+                      className="text-xs px-2 hover:bg-primary hover:text-white"
                     >
-                      <Check className="w-4 h-4" />
+                      <Check className="w-3 h-3" />
                     </Button>
                   )}
                 </div>

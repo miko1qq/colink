@@ -1,14 +1,11 @@
-import { Moon, Sun, Search, GraduationCap } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TopRightNavigation from "../TopRightNavigation";
-import { useTheme } from "@/components/theme-provider";
 import CoventryLogo from "../CoventryLogo"; 
 
 const TopBar = () => {
-  const { theme, setTheme } = useTheme();
-
   return (
-    <header className="fixed top-0 w-full z-50 bg-white/90 dark:bg-zinc-900/90 backdrop-blur border-b border-border shadow-sm">
+    <header className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur border-b border-border shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Logo and Brand */}
         <div className="flex items-center gap-3">
@@ -23,26 +20,18 @@ const TopBar = () => {
 
         {/* Right Side Buttons */}
         <div className="flex items-center gap-3">
-          {/* Search */}
-          <Button variant="ghost" size="icon" className="text-muted-foreground">
-            <Search className="w-5 h-5" />
-          </Button>
-
-          {/* Theme Toggle */}
+          {/* Official Site Link */}
           <Button
             variant="ghost"
-            size="icon"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="text-muted-foreground"
+            size="sm"
+            onClick={() => window.open('https://coventry.edu.kz/ru', '_blank')}
+            className="text-muted-foreground hover:text-primary text-xs hidden sm:flex"
           >
-            {theme === "dark" ? (
-              <Sun className="w-5 h-5" />
-            ) : (
-              <Moon className="w-5 h-5" />
-            )}
+            <ExternalLink className="w-4 h-4 mr-1" />
+            Official Site
           </Button>
 
-          {/* User Navigation */}
+          {/* User Navigation (includes single search) */}
           <TopRightNavigation />
         </div>
       </div>

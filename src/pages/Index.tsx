@@ -6,11 +6,14 @@ import CoventryLogo from "@/components/CoventryLogo";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-gradient-secondary relative">
+    <div className="min-h-screen bg-white relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-white"></div>
+      
       {/* Navigation */}
-      <div className="absolute top-4 right-4 z-20">
+      <div className="absolute top-20 right-6 z-20">
         <Link to="/faq">
-          <Button variant="outline" size="sm" className="bg-white/90 backdrop-blur-sm">
+          <Button variant="outline" size="sm" className="bg-white shadow-sm border-primary/20 hover:bg-primary hover:text-white">
             <HelpCircle className="h-4 w-4 mr-2" />
             FAQ
           </Button>
@@ -18,56 +21,56 @@ const Index = () => {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
-        <div className="max-w-4xl mx-auto text-center space-y-8">
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-20">
+        <div className="max-w-6xl mx-auto text-center space-y-12">
           {/* Header */}
-          <div className="space-y-6">
-            <div className="mb-6">
-              <CoventryLogo size="xl" className="mx-auto mb-4" />
+          <div className="space-y-8">
+            <div className="mb-8">
+              <CoventryLogo size="xl" className="mx-auto mb-6" />
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold text-primary">
+            <h1 className="text-5xl md:text-7xl font-bold text-primary mb-4">
               CoLink
             </h1>
-            <h2 className="text-xl md:text-2xl font-semibold text-muted-foreground">
+            <h2 className="text-2xl md:text-3xl font-semibold text-primary/80 mb-6">
               Coventry University Astana
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Engage in academic excellence through quests, badges, and friendly competition.
-              Choose your role to begin your journey.
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+              Engage in academic excellence through interactive quests, earn badges, and compete in friendly leaderboards.
+              Choose your role to begin your learning journey.
             </p>
           </div>
 
           {/* Role Selection */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto mt-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto mt-16">
             {/* Student Card */}
-            <Link to="/login?role=student">
-              <Card className="bg-white shadow-lg hover:shadow-primary/30 transition-all duration-300 hover:scale-105 cursor-pointer h-full border-2 border-transparent hover:border-primary/20">
-                <CardHeader className="text-center pb-4">
-                  <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-primary">
-                    <Trophy className="h-10 w-10 text-white" />
+            <Link to="/login?role=student" className="group">
+              <Card className="bg-white shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] cursor-pointer h-full border-2 border-primary/10 hover:border-primary/30 rounded-2xl overflow-hidden">
+                <CardHeader className="text-center pb-6 pt-8">
+                  <div className="w-24 h-24 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl group-hover:scale-110 transition-transform duration-300">
+                    <Trophy className="h-12 w-12 text-white" />
                   </div>
-                  <CardTitle className="text-2xl text-primary">I'm a Student</CardTitle>
+                  <CardTitle className="text-3xl text-primary mb-2">I'm a Student</CardTitle>
                 </CardHeader>
-                <CardContent className="text-center space-y-4">
-                  <p className="text-muted-foreground">
-                    Complete quests, earn XP, unlock badges, and climb the leaderboard
+                <CardContent className="text-center space-y-6 px-8 pb-8">
+                  <p className="text-lg text-muted-foreground leading-relaxed">
+                    Complete academic quests, earn valuable XP, unlock achievement badges, and climb the competitive leaderboard
                   </p>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-center gap-2">
-                      <Target className="h-4 w-4 text-primary" />
+                  <div className="space-y-4 text-base">
+                    <div className="flex items-center justify-center gap-3">
+                      <Target className="h-5 w-5 text-primary" />
                       <span>Complete Academic Quests</span>
                     </div>
-                    <div className="flex items-center justify-center gap-2">
-                      <Trophy className="h-4 w-4 text-primary" />
-                      <span>Earn Badges & XP</span>
+                    <div className="flex items-center justify-center gap-3">
+                      <Trophy className="h-5 w-5 text-primary" />
+                      <span>Earn Badges & XP Points</span>
                     </div>
-                    <div className="flex items-center justify-center gap-2">
-                      <Users className="h-4 w-4 text-primary" />
+                    <div className="flex items-center justify-center gap-3">
+                      <Users className="h-5 w-5 text-primary" />
                       <span>Compete on Leaderboards</span>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Button className="w-full bg-primary hover:bg-primary/90 text-white" size="lg">
+                  <div className="pt-4">
+                    <Button className="w-full bg-primary hover:bg-primary/90 text-white text-lg py-4 rounded-xl font-semibold" size="lg">
                       Enter as Student
                     </Button>
                   </div>
@@ -76,34 +79,34 @@ const Index = () => {
             </Link>
 
             {/* Professor Card */}
-            <Link to="/login?role=professor">
-              <Card className="bg-white shadow-lg hover:shadow-primary/30 transition-all duration-300 hover:scale-105 cursor-pointer h-full border-2 border-transparent hover:border-primary/20">
-                <CardHeader className="text-center pb-4">
-                  <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-primary">
-                    <Users className="h-10 w-10 text-white" />
+            <Link to="/login?role=professor" className="group">
+              <Card className="bg-white shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] cursor-pointer h-full border-2 border-primary/10 hover:border-primary/30 rounded-2xl overflow-hidden">
+                <CardHeader className="text-center pb-6 pt-8">
+                  <div className="w-24 h-24 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl group-hover:scale-110 transition-transform duration-300">
+                    <GraduationCap className="h-12 w-12 text-white" />
                   </div>
-                  <CardTitle className="text-2xl text-primary">I'm a Professor</CardTitle>
+                  <CardTitle className="text-3xl text-primary mb-2">I'm a Professor</CardTitle>
                 </CardHeader>
-                <CardContent className="text-center space-y-4">
-                  <p className="text-muted-foreground">
-                    Create quests, track engagement, award badges, and analyze student progress
+                <CardContent className="text-center space-y-6 px-8 pb-8">
+                  <p className="text-lg text-muted-foreground leading-relaxed">
+                    Create engaging quests, track student engagement, award achievement badges, and analyze comprehensive progress
                   </p>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-center gap-2">
-                      <Target className="h-4 w-4 text-primary" />
+                  <div className="space-y-4 text-base">
+                    <div className="flex items-center justify-center gap-3">
+                      <Target className="h-5 w-5 text-primary" />
                       <span>Create Learning Quests</span>
                     </div>
-                    <div className="flex items-center justify-center gap-2">
-                      <Trophy className="h-4 w-4 text-primary" />
+                    <div className="flex items-center justify-center gap-3">
+                      <Trophy className="h-5 w-5 text-primary" />
                       <span>Award Student Badges</span>
                     </div>
-                    <div className="flex items-center justify-center gap-2">
-                      <Users className="h-4 w-4 text-primary" />
+                    <div className="flex items-center justify-center gap-3">
+                      <Users className="h-5 w-5 text-primary" />
                       <span>Track Student Analytics</span>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Button className="w-full bg-primary hover:bg-primary/90 text-white" size="lg">
+                  <div className="pt-4">
+                    <Button className="w-full bg-primary hover:bg-primary/90 text-white text-lg py-4 rounded-xl font-semibold" size="lg">
                       Enter as Professor
                     </Button>
                   </div>
@@ -113,8 +116,8 @@ const Index = () => {
           </div>
 
           {/* Footer */}
-          <div className="text-center text-muted-foreground mt-12">
-            <p className="text-sm">
+          <div className="text-center text-muted-foreground mt-16 pt-8 border-t border-primary/10">
+            <p className="text-base">
               Powered by modern web technology • Built for academic excellence
             </p>
           </div>

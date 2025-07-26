@@ -13,7 +13,7 @@ interface Question {
 }
 
 interface BusinessQuizProps {
-  onComplete: (score: number) => void;
+  onComplete: (score: number, incorrectQuestions?: number[]) => void;
 }
 
 const BusinessQuiz = ({ onComplete }: BusinessQuizProps) => {
@@ -22,6 +22,7 @@ const BusinessQuiz = ({ onComplete }: BusinessQuizProps) => {
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
+  const [incorrectQuestions, setIncorrectQuestions] = useState<number[]>([]);
 
   const questions: Question[] = [
     {
@@ -84,8 +85,17 @@ const BusinessQuiz = ({ onComplete }: BusinessQuizProps) => {
     const newAnswers = [...answers, selectedAnswer];
     setAnswers(newAnswers);
 
+    // Update score based on correct answer
+    let newScore = score;
+    let newIncorrectQuestions = [...incorrectQuestions];
+    
     if (selectedAnswer === questions[currentQuestion].correctAnswer) {
-      setScore(score + 1);
+      newScore = score + 1;
+      setScore(newScore);
+    } else {
+      // Track incorrect questions for bonus round
+      newIncorrectQuestions.push(currentQuestion);
+      setIncorrectQuestions(newIncorrectQuestions);
     }
 
     setShowResult(true);
@@ -97,8 +107,17 @@ const BusinessQuiz = ({ onComplete }: BusinessQuizProps) => {
       setSelectedAnswer(null);
       setShowResult(false);
     } else {
-      // Quiz completed
-      onComplete(score + (selectedAnswer === questions[currentQuestion].correctAnswer ? 1 : 0));
+      // Quiz completed - calculate final score correctly
+      let finalScore = score;
+      let finalIncorrectQuestions = [...incorrectQuestions];
+      
+      if (selectedAnswer === questions[currentQuestion].correctAnswer) {
+        finalScore += 1;
+      } else {
+        finalIncorrectQuestions.push(currentQuestion);
+      }
+      
+      onComplete(finalScore, finalIncorrectQuestions);
     }
   };
 

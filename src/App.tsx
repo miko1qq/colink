@@ -16,6 +16,8 @@ import Quests from "./pages/student/Quests";
 import BusinessQuizPage from "./pages/student/BusinessQuizPage";
 import Badges from "./pages/student/Badges";
 import Leaderboard from "./pages/student/Leaderboard";
+import StudentProfile from "./pages/student/Profile";
+import ProfessorProfile from "./pages/professor/Profile";
 import Profile from "./pages/shared/Profile";
 import Messaging from "./pages/shared/Messaging";
 import QuestBuilder from "./pages/professor/QuestBuilder";
@@ -57,11 +59,13 @@ const App = () => {
               <Route path="/student/business-quiz" element={<BusinessQuizPage />} />
               <Route path="/student/badges" element={<Badges />} />
               <Route path="/student/leaderboard" element={<Leaderboard />} />
+              <Route path="/student/profile" element={<StudentProfile />} />
 
               {/* Professor */}
               <Route path="/professor/dashboard" element={<ProfessorDashboard />} />
               <Route path="/professor/quest-builder" element={<QuestBuilder />} />
               <Route path="/professor/analytics" element={<Analytics />} />
+              <Route path="/professor/profile" element={<ProfessorProfile />} />
 
               {/* Shared */}
               <Route path="/profile" element={<Profile />} />

@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BusinessQuiz from "@/components/BusinessQuiz";
 import QuizResults from "@/components/QuizResults";
+import BonusRound from "@/components/BonusRound";
 import BadgeEarnedModal from "@/components/BadgeEarnedModal";
 import { supabase } from "@/lib/supabaseClient";
 import { 
@@ -15,8 +16,9 @@ import {
 
 const BusinessQuizPage = () => {
   const navigate = useNavigate();
-  const [currentView, setCurrentView] = useState<'quiz' | 'results'>('quiz');
+  const [currentView, setCurrentView] = useState<'quiz' | 'bonus' | 'results'>('quiz');
   const [finalScore, setFinalScore] = useState(0);
+  const [incorrectQuestions, setIncorrectQuestions] = useState<number[]>([]);
   const [showBadgeModal, setShowBadgeModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -44,11 +46,80 @@ const BusinessQuizPage = () => {
     getCurrentUser();
   }, []);
 
-  const handleQuizComplete = async (score: number) => {
-    setFinalScore(score);
-    setCurrentView('results');
-    setLoading(true);
+  // Business quiz questions for bonus round
+  const quizQuestions = [
+    {
+      id: 1,
+      question: "What is the primary purpose of a business plan?",
+      options: [
+        "To secure funding from investors",
+        "To provide a roadmap for business operations and growth",
+        "To comply with legal requirements",
+        "To impress potential customers"
+      ],
+      correctAnswer: 1,
+      explanation: "A business plan serves as a comprehensive roadmap that guides business operations, strategic decisions, and growth planning."
+    },
+    {
+      id: 2,
+      question: "Which of the following is NOT one of the four Ps of marketing?",
+      options: [
+        "Product",
+        "Price",
+        "Promotion",
+        "Performance"
+      ],
+      correctAnswer: 3,
+      explanation: "The four Ps of marketing are Product, Price, Place, and Promotion. Performance is not one of the traditional marketing mix elements."
+    },
+    {
+      id: 3,
+      question: "What does SWOT analysis stand for?",
+      options: [
+        "Strengths, Weaknesses, Opportunities, Threats",
+        "Systems, Workflow, Organization, Technology",
+        "Sales, Workforce, Operations, Targets",
+        "Strategic, Workload, Objectives, Timeline"
+      ],
+      correctAnswer: 0,
+      explanation: "SWOT analysis is a strategic planning technique that evaluates Strengths, Weaknesses, Opportunities, and Threats of a business or project."
+    },
+    {
+      id: 4,
+      question: "What is the break-even point in business?",
+      options: [
+        "The point where a company goes public",
+        "The point where total revenue equals total costs",
+        "The maximum profit a company can achieve",
+        "The point where a company must close down"
+      ],
+      correctAnswer: 1,
+      explanation: "The break-even point is where total revenue equals total costs, meaning the business is not making a profit or loss."
+    }
+  ];
 
+  const handleQuizComplete = async (score: number, incorrectQuestionIndexes?: number[]) => {
+    setFinalScore(score);
+    setIncorrectQuestions(incorrectQuestionIndexes || []);
+    
+    // Check if student got exactly 3/4 (75%) and has one wrong answer - eligible for bonus round
+    if (score === 3 && incorrectQuestionIndexes && incorrectQuestionIndexes.length === 1) {
+      setCurrentView('bonus');
+    } else {
+      setCurrentView('results');
+      await saveQuizResults(score);
+    }
+  };
+
+  const handleBonusComplete = async (success: boolean) => {
+    const finalBonusScore = success ? 4 : finalScore; // Perfect score if bonus successful
+    setFinalScore(finalBonusScore);
+    setCurrentView('results');
+    await saveQuizResults(finalBonusScore);
+  };
+
+  const saveQuizResults = async (score: number) => {
+    setLoading(true);
     try {
       if (user) {
         // Save quiz attempt
@@ -136,6 +207,14 @@ const BusinessQuizPage = () => {
         {/* Main Content */}
         {currentView === 'quiz' && (
           <BusinessQuiz onComplete={handleQuizComplete} />
+        )}
+
+        {currentView === 'bonus' && (
+          <BonusRound
+            questions={quizQuestions}
+            incorrectQuestionIndex={incorrectQuestions[0]}
+            onComplete={handleBonusComplete}
+          />
         )}
 
         {currentView === 'results' && (
