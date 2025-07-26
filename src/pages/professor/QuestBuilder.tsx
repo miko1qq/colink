@@ -1,479 +1,461 @@
-import { ArrowLeft, Plus, Target, Save, Users, Clock, Star, BookOpen, CheckCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { 
+  Plus, 
+  Save, 
+  Eye, 
+  Calendar as CalendarIcon, 
+  Trophy, 
+  Target, 
+  BookOpen,
+  ArrowLeft,
+  Trash2,
+  Edit3
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { useUser } from "@/hooks/useUser";
+import { questService, type Quest } from "@/lib/supabaseService";
 import { useToast } from "@/hooks/use-toast";
-import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { questService } from "@/lib/supabaseService";
-import { supabase } from "@/lib/supabaseClient";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import BottomNavigation from "@/components/BottomNavigation";
 
 const QuestBuilder = () => {
+  const { user, profile } = useUser();
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const [questData, setQuestData] = useState({
+
+  const [quests, setQuests] = useState<Quest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
+  const [showForm, setShowForm] = useState(false);
+
+  const [formData, setFormData] = useState({
     title: "",
     description: "",
-    category: "",
-    difficulty: "",
-    xpReward: 100,
-    timeEstimate: "",
-    dueDate: "",
-    instructions: "",
-    isActive: true,
-    assignedStudents: "all",
-    tags: [] as string[]
+    xp: 100,
+    published: false,
+    deadline: null as Date | null
   });
 
-  const [currentTag, setCurrentTag] = useState("");
-  const [loading, setLoading] = useState(false);
+  // Fetch professor's quests
+  useEffect(() => {
+    if (!user || !profile || profile.role !== 'professor') return;
 
-  const categories = [
-    "Academic Assignment",
-    "Research Project", 
-    "Group Activity",
-    "Lab Session",
-    "Discussion Forum",
-    "Presentation",
-    "Reading Task",
-    "Problem Solving"
-  ];
+    const fetchQuests = async () => {
+      try {
+        setLoading(true);
+        const professorQuests = await questService.getQuestsByCreator(user.id);
+        setQuests(professorQuests);
+      } catch (error) {
+        console.error('Error fetching quests:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load quests",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const difficulties = [
-    { value: "easy", label: "Easy", xp: 50 },
-    { value: "medium", label: "Medium", xp: 100 },
-    { value: "hard", label: "Hard", xp: 200 }
-  ];
+    fetchQuests();
+  }, [user, profile, toast]);
 
-  const timeEstimates = [
-    "30 minutes",
-    "1 hour",
-    "2 hours", 
-    "3 hours",
-    "4+ hours",
-    "Multiple days"
-  ];
-
-  const studentGroups = [
-    { value: "all", label: "All Students" },
-    { value: "cs101", label: "CS 101 - Introduction to Programming" },
-    { value: "cs201", label: "CS 201 - Data Structures" },
-    { value: "cs301", label: "CS 301 - Algorithms" },
-    { value: "math101", label: "MATH 101 - Calculus I" }
-  ];
-
-  const addTag = () => {
-    if (currentTag.trim() && !questData.tags.includes(currentTag.trim())) {
-      setQuestData(prev => ({
-        ...prev,
-        tags: [...prev.tags, currentTag.trim()]
-      }));
-      setCurrentTag("");
-    }
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      description: "",
+      xp: 100,
+      published: false,
+      deadline: null
+    });
+    setEditingQuest(null);
+    setShowForm(false);
   };
 
-  const removeTag = (tagToRemove: string) => {
-    setQuestData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
-    }));
+  const handleEdit = (quest: Quest) => {
+    setFormData({
+      title: quest.title,
+      description: quest.description,
+      xp: quest.xp,
+      published: quest.published,
+      deadline: quest.deadline ? new Date(quest.deadline) : null
+    });
+    setEditingQuest(quest);
+    setShowForm(true);
   };
 
-  const handleSaveQuest = async () => {
-    if (!questData.title || !questData.description) {
+  const handleSave = async () => {
+    if (!formData.title.trim() || !formData.description.trim()) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in the title and description fields.",
-        variant: "destructive",
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
       });
       return;
     }
 
-    setLoading(true);
+    setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-
-      const questToCreate = {
-        title: questData.title,
-        description: questData.description,
-        instructions: questData.instructions || questData.description,
-        xp_reward: questData.xpReward,
-        difficulty: questData.difficulty as 'easy' | 'medium' | 'hard',
-        category: questData.category,
-        time_estimate: questData.timeEstimate,
-        due_date: questData.dueDate ? new Date(questData.dueDate).toISOString() : undefined,
-        is_active: questData.isActive,
-        created_by: user.id,
+      const questData = {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        xp: formData.xp,
+        published: formData.published,
+        deadline: formData.deadline?.toISOString() || null,
+        created_by: user!.id
       };
 
-      const createdQuest = await questService.createQuest(questToCreate);
-      
-      if (createdQuest) {
-        toast({
-          title: "Quest Successfully Created! 🎉",
-          description: `"${questData.title}" is now available to students.`,
-          action: (
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-green-500 font-medium">Success</span>
-            </div>
-          ),
-        });
-
-        // Reset form
-        setQuestData({
-          title: "",
-          description: "",
-          category: "",
-          difficulty: "",
-          xpReward: 100,
-          timeEstimate: "",
-          dueDate: "",
-          instructions: "",
-          isActive: true,
-          assignedStudents: "all",
-          tags: []
-        });
-
-        // Navigate back to dashboard after a short delay
-        setTimeout(() => {
-          navigate('/professor/dashboard');
-        }, 2000);
+      if (editingQuest) {
+        // Update existing quest
+        const updatedQuest = await questService.updateQuest(editingQuest.id, questData);
+        if (updatedQuest) {
+          setQuests(prev => prev.map(q => q.id === editingQuest.id ? updatedQuest : q));
+          toast({
+            title: "Quest Updated",
+            description: "Your quest has been updated successfully"
+          });
+        }
+      } else {
+        // Create new quest
+        const newQuest = await questService.createQuest(questData);
+        if (newQuest) {
+          setQuests(prev => [newQuest, ...prev]);
+          toast({
+            title: "Quest Created",
+            description: "Your quest has been created successfully"
+          });
+        }
       }
+
+      resetForm();
     } catch (error) {
-      console.error('Error creating quest:', error);
+      console.error('Error saving quest:', error);
       toast({
-        title: "Failed to Create Quest",
-        description: "There was an error creating your quest. Please try again.",
-        variant: "destructive",
+        title: "Error",
+        description: "Failed to save quest",
+        variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  const handleDifficultyChange = (difficulty: string) => {
-    const difficultyData = difficulties.find(d => d.value === difficulty);
-    setQuestData(prev => ({
-      ...prev,
-      difficulty,
-      xpReward: difficultyData?.xp || 100
-    }));
+  const handleDelete = async (questId: string) => {
+    if (!confirm('Are you sure you want to delete this quest?')) return;
+
+    try {
+      const success = await questService.deleteQuest(questId);
+      if (success) {
+        setQuests(prev => prev.filter(q => q.id !== questId));
+        toast({
+          title: "Quest Deleted",
+          description: "Quest has been deleted successfully"
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting quest:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete quest",
+        variant: "destructive"
+      });
+    }
   };
 
+  const togglePublished = async (quest: Quest) => {
+    try {
+      const updatedQuest = await questService.updateQuest(quest.id, {
+        published: !quest.published
+      });
+      
+      if (updatedQuest) {
+        setQuests(prev => prev.map(q => q.id === quest.id ? updatedQuest : q));
+        toast({
+          title: quest.published ? "Quest Unpublished" : "Quest Published",
+          description: quest.published 
+            ? "Quest is no longer visible to students" 
+            : "Quest is now visible to students"
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling quest publication:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update quest",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (!profile || profile.role !== 'professor') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
+        <Alert className="max-w-md">
+          <AlertDescription>
+            Access denied. This page is only available to professors.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading quests...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-secondary p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white pb-20">
+      <div className="max-w-6xl mx-auto p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Link to="/professor/dashboard">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-primary">
-              Quest Builder 🎯
-            </h1>
-            <p className="text-muted-foreground">Create engaging learning experiences for your students</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link to="/professor/dashboard">
+              <Button variant="outline" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold text-primary">Quest Builder ⚔️</h1>
+              <p className="text-muted-foreground">Create engaging quests for your students</p>
+            </div>
           </div>
+          <Button 
+            onClick={() => setShowForm(true)}
+            className="bg-primary hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create New Quest
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Form */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Basic Information */}
-            <Card className="shadow-card">
+          {/* Quest Form */}
+          {showForm && (
+            <Card className="lg:col-span-1 shadow-lg border-primary/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Target className="h-5 w-5 text-primary" />
-                  Quest Details
+                  {editingQuest ? "Edit Quest" : "Create New Quest"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="title">Quest Title</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="title">Quest Title *</Label>
                   <Input
                     id="title"
                     placeholder="Enter quest title..."
-                    value={questData.title}
-                    onChange={(e) => setQuestData(prev => ({ ...prev, title: e.target.value }))}
+                    value={formData.title}
+                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                    className="border-primary/20 focus:border-primary"
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="description">Short Description</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description *</Label>
                   <Textarea
                     id="description"
-                    placeholder="Brief overview of what students will accomplish..."
-                    value={questData.description}
-                    onChange={(e) => setQuestData(prev => ({ ...prev, description: e.target.value }))}
-                    rows={3}
+                    placeholder="Describe what students need to do..."
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    className="min-h-[100px] border-primary/20 focus:border-primary"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="category">Category</Label>
-                    <Select
-                      value={questData.category}
-                      onValueChange={(value) => setQuestData(prev => ({ ...prev, category: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="difficulty">Difficulty</Label>
-                    <Select
-                      value={questData.difficulty}
-                      onValueChange={handleDifficultyChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select difficulty" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {difficulties.map((diff) => (
-                          <SelectItem key={diff.value} value={diff.value}>
-                            {diff.label} ({diff.xp} XP)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="timeEstimate">Time Estimate</Label>
-                    <Select
-                      value={questData.timeEstimate}
-                      onValueChange={(value) => setQuestData(prev => ({ ...prev, timeEstimate: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select time estimate" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {timeEstimates.map((time) => (
-                          <SelectItem key={time} value={time}>
-                            {time}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="dueDate">Due Date</Label>
-                    <Input
-                      id="dueDate"
-                      type="date"
-                      value={questData.dueDate}
-                      onChange={(e) => setQuestData(prev => ({ ...prev, dueDate: e.target.value }))}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Detailed Instructions */}
-            <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5 text-primary" />
-                  Instructions & Requirements
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div>
-                  <Label htmlFor="instructions">Detailed Instructions</Label>
-                  <Textarea
-                    id="instructions"
-                    placeholder="Provide step-by-step instructions, requirements, and any resources students will need..."
-                    value={questData.instructions}
-                    onChange={(e) => setQuestData(prev => ({ ...prev, instructions: e.target.value }))}
-                    rows={8}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Tags */}
-            <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle>Tags</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
+                <div className="space-y-2">
+                  <Label htmlFor="xp">XP Reward</Label>
                   <Input
-                    placeholder="Add tag..."
-                    value={currentTag}
-                    onChange={(e) => setCurrentTag(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        addTag();
-                      }
-                    }}
-                  />
-                  <Button onClick={addTag} variant="outline" size="sm">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                {questData.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {questData.tags.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="outline"
-                        className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
-                        onClick={() => removeTag(tag)}
-                      >
-                        {tag} ×
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Settings */}
-            <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Star className="h-5 w-5 text-primary" />
-                  Quest Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="xpReward">XP Reward</Label>
-                  <Input
-                    id="xpReward"
+                    id="xp"
                     type="number"
-                    min="10"
-                    max="500"
-                    value={questData.xpReward}
-                    onChange={(e) => setQuestData(prev => ({ ...prev, xpReward: parseInt(e.target.value) || 100 }))}
+                    min="1"
+                    max="1000"
+                    value={formData.xp}
+                    onChange={(e) => setFormData(prev => ({ ...prev, xp: parseInt(e.target.value) || 100 }))}
+                    className="border-primary/20 focus:border-primary"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Deadline (Optional)</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal border-primary/20",
+                          !formData.deadline && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.deadline ? format(formData.deadline, "PPP") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={formData.deadline || undefined}
+                        onSelect={(date) => setFormData(prev => ({ ...prev, deadline: date || null }))}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div className="flex items-center space-x-2">
                   <Switch
-                    id="isActive"
-                    checked={questData.isActive}
-                    onCheckedChange={(checked) => setQuestData(prev => ({ ...prev, isActive: checked }))}
+                    id="published"
+                    checked={formData.published}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, published: checked }))}
                   />
-                  <Label htmlFor="isActive">Activate quest immediately</Label>
+                  <Label htmlFor="published">Publish immediately</Label>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Assignment */}
-            <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-primary" />
-                  Assignment
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div>
-                  <Label htmlFor="assignedStudents">Assign to</Label>
-                  <Select
-                    value={questData.assignedStudents}
-                    onValueChange={(value) => setQuestData(prev => ({ ...prev, assignedStudents: value }))}
+                <Separator />
+
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleSave} 
+                    disabled={saving}
+                    className="flex-1 bg-primary hover:bg-primary/90"
                   >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {studentGroups.map((group) => (
-                        <SelectItem key={group.value} value={group.value}>
-                          {group.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Preview */}
-            <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle>Quest Preview</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">{questData.xpReward} XP</div>
-                  <p className="text-sm text-muted-foreground">Reward</p>
-                </div>
-                
-                {questData.difficulty && (
-                  <Badge className="w-full justify-center">
-                    {questData.difficulty.toUpperCase()}
-                  </Badge>
-                )}
-                
-                {questData.timeEstimate && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    {questData.timeEstimate}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Actions */}
-            <div className="space-y-3">
-              <Button
-                onClick={handleSaveQuest}
-                className="w-full bg-primary hover:bg-primary/90"
-                disabled={!questData.title || !questData.description || loading}
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creating Quest...
-                  </>
-                ) : (
-                  <>
                     <Save className="h-4 w-4 mr-2" />
-                    {questData.isActive ? "Create & Activate Quest" : "Save as Draft"}
-                  </>
-                )}
-              </Button>
-              
-              <Button variant="outline" className="w-full">
-                Preview Quest
-              </Button>
-            </div>
-          </div>
+                    {saving ? "Saving..." : editingQuest ? "Update Quest" : "Create Quest"}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={resetForm}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Quest List */}
+          <Card className={`shadow-lg border-primary/20 ${showForm ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-primary" />
+                Your Quests ({quests.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {quests.length === 0 ? (
+                <div className="text-center py-12">
+                  <Target className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                  <h3 className="text-lg font-semibold mb-2">No quests yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Create your first quest to engage your students
+                  </p>
+                  <Button 
+                    onClick={() => setShowForm(true)}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Your First Quest
+                  </Button>
+                </div>
+              ) : (
+                <ScrollArea className="h-[600px]">
+                  <div className="space-y-4">
+                    {quests.map((quest) => (
+                      <Card key={quest.id} className="border border-border/50 hover:border-primary/30 transition-colors">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-semibold text-lg">{quest.title}</h3>
+                                <Badge 
+                                  variant={quest.published ? "default" : "secondary"}
+                                  className={quest.published ? "bg-green-100 text-green-800" : ""}
+                                >
+                                  {quest.published ? "Published" : "Draft"}
+                                </Badge>
+                              </div>
+                              
+                              <p className="text-muted-foreground text-sm line-clamp-2">
+                                {quest.description}
+                              </p>
+                              
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <Trophy className="h-4 w-4" />
+                                  {quest.xp} XP
+                                </div>
+                                {quest.deadline && (
+                                  <div className="flex items-center gap-1">
+                                    <CalendarIcon className="h-4 w-4" />
+                                    Due {format(new Date(quest.deadline), "MMM d, yyyy")}
+                                  </div>
+                                )}
+                                <div className="text-xs">
+                                  Created {format(new Date(quest.created_at), "MMM d, yyyy")}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => togglePublished(quest)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEdit(quest)}
+                              >
+                                <Edit3 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDelete(quest.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
+
+      {/* Bottom Navigation */}
+      <BottomNavigation userRole="professor" />
     </div>
   );
 };

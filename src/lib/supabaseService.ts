@@ -1,157 +1,187 @@
 import { supabase } from './supabaseClient';
 import type { User } from '@supabase/supabase-js';
 
-// Types
-export interface Profile {
+// Types matching the new schema
+export interface UserProfile {
   id: string;
   email: string;
-  full_name: string | null;
-  avatar_url: string | null;
+  name: string | null;
   role: 'student' | 'professor';
-  xp: number;
-  level: number;
+  avatar_url: string | null;
   created_at: string;
-  updated_at: string;
 }
 
 export interface Quest {
   id: string;
   title: string;
   description: string;
-  instructions?: string;
-  xp_reward: number;
-  difficulty: 'easy' | 'medium' | 'hard';
-  category: string;
-  time_estimate?: string;
-  due_date?: string;
-  is_active: boolean;
-  created_by?: string;
+  xp: number;
+  created_by: string | null;
+  published: boolean;
+  deadline: string | null;
   created_at: string;
-  updated_at: string;
+}
+
+export interface QuestProgress {
+  id: string;
+  quest_id: string;
+  student_id: string;
+  status: 'not started' | 'in progress' | 'completed' | 'failed';
+  completed_at: string | null;
+  score: number | null;
+  created_at: string;
 }
 
 export interface Badge {
   id: string;
   name: string;
   description: string;
-  icon: string;
-  xp_reward: number;
-  badge_type: 'bronze' | 'silver' | 'gold' | 'diamond' | 'platinum';
-  rarity: 'common' | 'uncommon' | 'rare' | 'legendary' | 'mythic';
-  requirements?: any;
+  icon_url: string | null;
+  earned_by: string[];
   created_at: string;
 }
 
-export interface StudentQuestProgress {
+export interface Message {
   id: string;
-  student_id: string;
-  quest_id: string;
-  status: 'not_started' | 'in_progress' | 'completed' | 'failed';
-  progress_percentage: number;
-  score?: number;
-  started_at?: string;
-  completed_at?: string;
+  sender_id: string;
+  receiver_id: string;
+  message: string;
+  read: boolean;
+  timestamp: string;
   created_at: string;
-  updated_at: string;
+  sender?: UserProfile;
+  receiver?: UserProfile;
 }
 
-export interface StudentBadge {
-  id: string;
-  student_id: string;
-  badge_id: string;
-  earned_at: string;
-  badge?: Badge;
-}
+// Auth Services
+export const authService = {
+  async signUp(email: string, password: string, role: 'student' | 'professor', fullName?: string) {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          role
+        }
+      }
+    });
+    return { data, error };
+  },
 
-export interface QuizAttempt {
-  id: string;
-  student_id: string;
-  quest_id: string;
-  answers: number[];
-  score: number;
-  total_questions: number;
-  completed_at: string;
-}
+  async signIn(email: string, password: string) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    return { data, error };
+  },
 
-// Profile Services
-export const profileService = {
-  async getProfile(userId: string): Promise<Profile | null> {
+  async signOut() {
+    const { error } = await supabase.auth.signOut();
+    return { error };
+  },
+
+  async getCurrentUser() {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    return { user, error };
+  },
+
+  async getCurrentSession() {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    return { session, error };
+  }
+};
+
+// User Services
+export const userService = {
+  async getUserProfile(userId: string): Promise<UserProfile | null> {
     const { data, error } = await supabase
-      .from('profiles')
+      .from('users')
       .select('*')
       .eq('id', userId)
       .single();
 
     if (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Error fetching user profile:', error);
       return null;
     }
 
     return data;
   },
 
-  async createProfile(user: User, role: 'student' | 'professor'): Promise<Profile | null> {
+  async getAllUsers(): Promise<UserProfile[]> {
     const { data, error } = await supabase
-      .from('profiles')
-      .insert({
-        id: user.id,
-        email: user.email!,
-        full_name: user.user_metadata?.full_name || null,
-        avatar_url: user.user_metadata?.avatar_url || null,
-        role,
-      })
-      .select()
-      .single();
+      .from('users')
+      .select('*')
+      .order('name');
 
     if (error) {
-      console.error('Error creating profile:', error);
-      return null;
+      console.error('Error fetching users:', error);
+      return [];
     }
 
-    return data;
+    return data || [];
   },
 
-  async updateProfile(userId: string, updates: Partial<Profile>): Promise<Profile | null> {
+  async getUsersByRole(role: 'student' | 'professor'): Promise<UserProfile[]> {
     const { data, error } = await supabase
-      .from('profiles')
+      .from('users')
+      .select('*')
+      .eq('role', role)
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching users by role:', error);
+      return [];
+    }
+
+    return data || [];
+  },
+
+  async updateUserProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile | null> {
+    const { data, error } = await supabase
+      .from('users')
       .update(updates)
       .eq('id', userId)
       .select()
       .single();
 
     if (error) {
-      console.error('Error updating profile:', error);
+      console.error('Error updating user profile:', error);
       return null;
     }
 
     return data;
-  },
-
-  async addXP(userId: string, xpToAdd: number): Promise<Profile | null> {
-    const profile = await this.getProfile(userId);
-    if (!profile) return null;
-
-    const newXP = profile.xp + xpToAdd;
-    const newLevel = Math.floor(newXP / 500) + 1; // Level up every 500 XP
-
-    return this.updateProfile(userId, { 
-      xp: newXP, 
-      level: newLevel 
-    });
   }
 };
 
 // Quest Services
 export const questService = {
-  async getAllQuests(): Promise<Quest[]> {
+  async getAllPublishedQuests(): Promise<Quest[]> {
     const { data, error } = await supabase
       .from('quests')
       .select('*')
-      .eq('is_active', true)
+      .eq('published', true)
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching quests:', error);
+      console.error('Error fetching published quests:', error);
+      return [];
+    }
+
+    return data || [];
+  },
+
+  async getQuestsByCreator(creatorId: string): Promise<Quest[]> {
+    const { data, error } = await supabase
+      .from('quests')
+      .select('*')
+      .eq('created_by', creatorId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching quests by creator:', error);
       return [];
     }
 
@@ -173,7 +203,7 @@ export const questService = {
     return data;
   },
 
-  async createQuest(quest: Omit<Quest, 'id' | 'created_at' | 'updated_at'>): Promise<Quest | null> {
+  async createQuest(quest: Omit<Quest, 'id' | 'created_at'>): Promise<Quest | null> {
     const { data, error } = await supabase
       .from('quests')
       .insert(quest)
@@ -182,6 +212,141 @@ export const questService = {
 
     if (error) {
       console.error('Error creating quest:', error);
+      return null;
+    }
+
+    return data;
+  },
+
+  async updateQuest(questId: string, updates: Partial<Quest>): Promise<Quest | null> {
+    const { data, error } = await supabase
+      .from('quests')
+      .update(updates)
+      .eq('id', questId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating quest:', error);
+      return null;
+    }
+
+    return data;
+  },
+
+  async deleteQuest(questId: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('quests')
+      .delete()
+      .eq('id', questId);
+
+    if (error) {
+      console.error('Error deleting quest:', error);
+      return false;
+    }
+
+    return true;
+  }
+};
+
+// Quest Progress Services
+export const questProgressService = {
+  async getStudentProgress(studentId: string): Promise<QuestProgress[]> {
+    const { data, error } = await supabase
+      .from('quest_progress')
+      .select('*')
+      .eq('student_id', studentId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching student progress:', error);
+      return [];
+    }
+
+    return data || [];
+  },
+
+  async getQuestProgress(questId: string, studentId: string): Promise<QuestProgress | null> {
+    const { data, error } = await supabase
+      .from('quest_progress')
+      .select('*')
+      .eq('quest_id', questId)
+      .eq('student_id', studentId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching quest progress:', error);
+      return null;
+    }
+
+    return data;
+  },
+
+  async getAllQuestProgress(questId: string): Promise<QuestProgress[]> {
+    const { data, error } = await supabase
+      .from('quest_progress')
+      .select('*')
+      .eq('quest_id', questId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching all quest progress:', error);
+      return [];
+    }
+
+    return data || [];
+  },
+
+  async startQuest(questId: string, studentId: string): Promise<QuestProgress | null> {
+    const { data, error } = await supabase
+      .from('quest_progress')
+      .upsert({
+        quest_id: questId,
+        student_id: studentId,
+        status: 'in progress'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error starting quest:', error);
+      return null;
+    }
+
+    return data;
+  },
+
+  async completeQuest(questId: string, studentId: string, score?: number): Promise<QuestProgress | null> {
+    const { data, error } = await supabase
+      .from('quest_progress')
+      .upsert({
+        quest_id: questId,
+        student_id: studentId,
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        score
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error completing quest:', error);
+      return null;
+    }
+
+    return data;
+  },
+
+  async updateQuestProgress(progressId: string, updates: Partial<QuestProgress>): Promise<QuestProgress | null> {
+    const { data, error } = await supabase
+      .from('quest_progress')
+      .update(updates)
+      .eq('id', progressId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating quest progress:', error);
       return null;
     }
 
@@ -205,15 +370,11 @@ export const badgeService = {
     return data || [];
   },
 
-  async getStudentBadges(studentId: string): Promise<StudentBadge[]> {
+  async getStudentBadges(studentId: string): Promise<Badge[]> {
     const { data, error } = await supabase
-      .from('student_badges')
-      .select(`
-        *,
-        badge:badges(*)
-      `)
-      .eq('student_id', studentId)
-      .order('earned_at', { ascending: false });
+      .from('badges')
+      .select('*')
+      .contains('earned_by', [studentId]);
 
     if (error) {
       console.error('Error fetching student badges:', error);
@@ -223,167 +384,163 @@ export const badgeService = {
     return data || [];
   },
 
-  async awardBadge(studentId: string, badgeId: string): Promise<StudentBadge | null> {
-    // Check if student already has this badge
-    const { data: existing } = await supabase
-      .from('student_badges')
-      .select('*')
-      .eq('student_id', studentId)
-      .eq('badge_id', badgeId)
-      .single();
-
-    if (existing) {
-      console.log('Student already has this badge');
-      return existing;
-    }
-
-    // Award the badge
-    const { data, error } = await supabase
-      .from('student_badges')
-      .insert({
-        student_id: studentId,
-        badge_id: badgeId
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error awarding badge:', error);
-      return null;
-    }
-
-    // Add XP for earning the badge
-    const badge = await supabase
+  async awardBadge(badgeId: string, studentId: string): Promise<boolean> {
+    // First get the current badge
+    const { data: badge, error: fetchError } = await supabase
       .from('badges')
-      .select('xp_reward')
+      .select('earned_by')
       .eq('id', badgeId)
       .single();
 
-    if (badge.data) {
-      await profileService.addXP(studentId, badge.data.xp_reward);
+    if (fetchError) {
+      console.error('Error fetching badge:', fetchError);
+      return false;
     }
 
-    return data;
+    // Check if student already has this badge
+    if (badge.earned_by.includes(studentId)) {
+      return true; // Already has the badge
+    }
+
+    // Add student to earned_by array
+    const updatedEarnedBy = [...badge.earned_by, studentId];
+
+    const { error } = await supabase
+      .from('badges')
+      .update({ earned_by: updatedEarnedBy })
+      .eq('id', badgeId);
+
+    if (error) {
+      console.error('Error awarding badge:', error);
+      return false;
+    }
+
+    return true;
   }
 };
 
-// Quest Progress Services
-export const questProgressService = {
-  async getStudentProgress(studentId: string, questId: string): Promise<StudentQuestProgress | null> {
+// Message Services
+export const messageService = {
+  async sendMessage(senderId: string, receiverId: string, message: string): Promise<Message | null> {
     const { data, error } = await supabase
-      .from('student_quest_progress')
-      .select('*')
-      .eq('student_id', studentId)
-      .eq('quest_id', questId)
+      .from('messages')
+      .insert({
+        sender_id: senderId,
+        receiver_id: receiverId,
+        message,
+        timestamp: new Date().toISOString()
+      })
+      .select()
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-      console.error('Error fetching quest progress:', error);
+    if (error) {
+      console.error('Error sending message:', error);
       return null;
     }
 
     return data;
   },
 
-  async getAllStudentProgress(studentId: string): Promise<StudentQuestProgress[]> {
+  async getConversations(userId: string): Promise<UserProfile[]> {
+    // Get all users that have messaged with the current user
     const { data, error } = await supabase
-      .from('student_quest_progress')
-      .select('*')
-      .eq('student_id', studentId)
-      .order('updated_at', { ascending: false });
+      .from('messages')
+      .select(`
+        sender_id,
+        receiver_id,
+        sender:users!messages_sender_id_fkey(id, name, email, role, avatar_url),
+        receiver:users!messages_receiver_id_fkey(id, name, email, role, avatar_url)
+      `)
+      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+      .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching student progress:', error);
+      console.error('Error fetching conversations:', error);
+      return [];
+    }
+
+    // Extract unique users (excluding current user)
+    const uniqueUsers = new Map<string, UserProfile>();
+    
+    data?.forEach((message: any) => {
+      const otherUser = message.sender_id === userId ? message.receiver : message.sender;
+      if (otherUser && otherUser.id !== userId) {
+        uniqueUsers.set(otherUser.id, otherUser);
+      }
+    });
+
+    return Array.from(uniqueUsers.values());
+  },
+
+  async getMessages(userId: string, otherUserId: string): Promise<Message[]> {
+    const { data, error } = await supabase
+      .from('messages')
+      .select(`
+        *,
+        sender:users!messages_sender_id_fkey(id, name, email, role, avatar_url),
+        receiver:users!messages_receiver_id_fkey(id, name, email, role, avatar_url)
+      `)
+      .or(
+        `and(sender_id.eq.${userId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${userId})`
+      )
+      .order('timestamp', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching messages:', error);
       return [];
     }
 
     return data || [];
   },
 
-  async startQuest(studentId: string, questId: string): Promise<StudentQuestProgress | null> {
-    const { data, error } = await supabase
-      .from('student_quest_progress')
-      .upsert({
-        student_id: studentId,
-        quest_id: questId,
-        status: 'in_progress',
-        started_at: new Date().toISOString()
-      })
-      .select()
-      .single();
+  async markMessageAsRead(messageId: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('messages')
+      .update({ read: true })
+      .eq('id', messageId);
 
     if (error) {
-      console.error('Error starting quest:', error);
-      return null;
+      console.error('Error marking message as read:', error);
+      return false;
     }
 
-    return data;
+    return true;
   },
 
-  async completeQuest(
-    studentId: string, 
-    questId: string, 
-    score?: number
-  ): Promise<StudentQuestProgress | null> {
-    const { data, error } = await supabase
-      .from('student_quest_progress')
-      .upsert({
-        student_id: studentId,
-        quest_id: questId,
-        status: 'completed',
-        progress_percentage: 100,
-        score,
-        completed_at: new Date().toISOString()
-      })
-      .select()
-      .single();
+  async getUnreadMessageCount(userId: string): Promise<number> {
+    const { count, error } = await supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('receiver_id', userId)
+      .eq('read', false);
 
     if (error) {
-      console.error('Error completing quest:', error);
-      return null;
+      console.error('Error fetching unread message count:', error);
+      return 0;
     }
 
-    // Add XP for completing the quest
-    const quest = await questService.getQuestById(questId);
-    if (quest) {
-      await profileService.addXP(studentId, quest.xp_reward);
-    }
-
-    return data;
-  }
-};
-
-// Quiz Services
-export const quizService = {
-  async saveQuizAttempt(attempt: Omit<QuizAttempt, 'id'>): Promise<QuizAttempt | null> {
-    const { data, error } = await supabase
-      .from('quiz_attempts')
-      .insert(attempt)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error saving quiz attempt:', error);
-      return null;
-    }
-
-    return data;
+    return count || 0;
   },
 
-  async getStudentQuizAttempts(studentId: string, questId: string): Promise<QuizAttempt[]> {
-    const { data, error } = await supabase
-      .from('quiz_attempts')
-      .select('*')
-      .eq('student_id', studentId)
-      .eq('quest_id', questId)
-      .order('completed_at', { ascending: false });
+  // Real-time subscription for messages
+  subscribeToMessages(userId: string, callback: (message: Message) => void) {
+    const subscription = supabase
+      .channel('messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${userId}`
+        },
+        (payload) => {
+          callback(payload.new as Message);
+        }
+      )
+      .subscribe();
 
-    if (error) {
-      console.error('Error fetching quiz attempts:', error);
-      return [];
-    }
-
-    return data || [];
+    return subscription;
   }
 };
 
@@ -391,11 +548,10 @@ export const quizService = {
 export const analyticsService = {
   async getStudentEngagementData(): Promise<any[]> {
     const { data, error } = await supabase
-      .from('profiles')
+      .from('users')
       .select(`
         *,
-        student_quest_progress(count),
-        student_badges(count)
+        quest_progress(count)
       `)
       .eq('role', 'student');
 
@@ -407,18 +563,19 @@ export const analyticsService = {
     return data || [];
   },
 
-  async getQuestAnalytics(): Promise<any[]> {
+  async getQuestAnalytics(professorId: string): Promise<any[]> {
     const { data, error } = await supabase
       .from('quests')
       .select(`
         *,
-        student_quest_progress(
+        quest_progress(
           status,
           score,
-          completed_at
+          completed_at,
+          student:users(name, email)
         )
       `)
-      .eq('is_active', true);
+      .eq('created_by', professorId);
 
     if (error) {
       console.error('Error fetching quest analytics:', error);
@@ -426,5 +583,40 @@ export const analyticsService = {
     }
 
     return data || [];
+  },
+
+  async getStudentStats(studentId: string) {
+    // Get completed quests count
+    const { count: completedQuests } = await supabase
+      .from('quest_progress')
+      .select('*', { count: 'exact', head: true })
+      .eq('student_id', studentId)
+      .eq('status', 'completed');
+
+    // Get earned badges count
+    const { data: badges } = await supabase
+      .from('badges')
+      .select('earned_by')
+      .contains('earned_by', [studentId]);
+
+    const earnedBadges = badges?.length || 0;
+
+    // Get average score
+    const { data: scores } = await supabase
+      .from('quest_progress')
+      .select('score')
+      .eq('student_id', studentId)
+      .eq('status', 'completed')
+      .not('score', 'is', null);
+
+    const averageScore = scores?.length 
+      ? scores.reduce((sum, item) => sum + (item.score || 0), 0) / scores.length 
+      : 0;
+
+    return {
+      completedQuests: completedQuests || 0,
+      earnedBadges,
+      averageScore: Math.round(averageScore)
+    };
   }
 };

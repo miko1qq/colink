@@ -1,422 +1,491 @@
-import { ArrowLeft, BarChart3, Users, Clock, TrendingUp, Download, Filter, Calendar } from "lucide-react";
-import * as XLSX from 'xlsx';
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { 
+  BarChart3, 
+  Users, 
+  Target, 
+  Trophy, 
+  TrendingUp,
+  ArrowLeft,
+  Calendar,
+  Clock,
+  CheckCircle,
+  AlertCircle
+} from "lucide-react";
 import { Link } from "react-router-dom";
+import { useUser } from "@/hooks/useUser";
+import { 
+  analyticsService, 
+  questService, 
+  userService, 
+  type Quest 
+} from "@/lib/supabaseService";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import BottomNavigation from "@/components/BottomNavigation";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line
+} from "recharts";
+
+interface QuestAnalytics {
+  quest: Quest;
+  totalStudents: number;
+  completedStudents: number;
+  averageScore: number;
+  completionRate: number;
+}
+
+interface StudentProgress {
+  id: string;
+  name: string;
+  email: string;
+  questsCompleted: number;
+  averageScore: number;
+  lastActivity: string;
+}
 
 const Analytics = () => {
-  const engagementData = [
-    { student: "Maria Garcia", engagement: 95, xp: 2450, timeSpent: "45h", questsCompleted: 18, avgScore: 94 },
-    { student: "David Chen", engagement: 92, xp: 2380, timeSpent: "42h", questsCompleted: 17, avgScore: 91 },
-    { student: "Alex Thompson", engagement: 88, xp: 2250, timeSpent: "38h", questsCompleted: 15, avgScore: 88 },
-    { student: "Sarah Ahmed", engagement: 85, xp: 2180, timeSpent: "36h", questsCompleted: 16, avgScore: 85 },
-    { student: "James Wilson", engagement: 82, xp: 2120, timeSpent: "34h", questsCompleted: 14, avgScore: 82 },
-    { student: "Lisa Park", engagement: 78, xp: 1980, timeSpent: "32h", questsCompleted: 13, avgScore: 79 },
-    { student: "Mohammed Ali", engagement: 75, xp: 1890, timeSpent: "28h", questsCompleted: 12, avgScore: 76 },
-    { student: "Anna Kowalski", engagement: 72, xp: 1820, timeSpent: "26h", questsCompleted: 11, avgScore: 73 },
-    { student: "Ryan Foster", engagement: 68, xp: 1750, timeSpent: "24h", questsCompleted: 10, avgScore: 70 },
-    { student: "Emma Davis", engagement: 65, xp: 1680, timeSpent: "22h", questsCompleted: 9, avgScore: 67 }
-  ];
+  const { user, profile } = useUser();
+  const { toast } = useToast();
 
-  const questAnalytics = [
-    {
-      title: "Business & Management Quiz",
-      completion: 89,
-      avgTime: "12m",
-      avgScore: 85,
-      dropOffRate: 11,
-      students: 34,
-      feedback: "Excellent"
-    },
-    {
-      title: "Computer Science Assignment",
-      completion: 85,
-      avgTime: "2.5h",
-      avgScore: 88,
-      dropOffRate: 15,
-      students: 45,
-      feedback: "Excellent"
-    },
-    {
-      title: "Virtual Lab Session",
-      completion: 92,
-      avgTime: "1.2h",
-      avgScore: 91,
-      dropOffRate: 8,
-      students: 38,
-      feedback: "Very Good"
-    },
-    {
-      title: "Group Discussion Forum",
-      completion: 78,
-      avgTime: "45m",
-      avgScore: 85,
-      dropOffRate: 22,
-      students: 52,
-      feedback: "Good"
-    },
-    {
-      title: "Research Paper Review",
-      completion: 67,
-      avgTime: "3.2h",
-      avgScore: 82,
-      dropOffRate: 33,
-      students: 29,
-      feedback: "Needs Improvement"
-    },
-    {
-      title: "Algorithm Implementation",
-      completion: 89,
-      avgTime: "2.8h",
-      avgScore: 90,
-      dropOffRate: 11,
-      students: 41,
-      feedback: "Excellent"
-    }
-  ];
+  const [loading, setLoading] = useState(true);
+  const [questAnalytics, setQuestAnalytics] = useState<QuestAnalytics[]>([]);
+  const [studentProgress, setStudentProgress] = useState<StudentProgress[]>([]);
+  const [totalStats, setTotalStats] = useState({
+    totalQuests: 0,
+    totalStudents: 0,
+    averageCompletion: 0,
+    totalXPAwarded: 0
+  });
 
-  const timeAnalytics = [
-    { hour: "08:00", activity: 12, type: "quests" },
-    { hour: "09:00", activity: 28, type: "quests" },
-    { hour: "10:00", activity: 45, type: "quests" },
-    { hour: "11:00", activity: 52, type: "general" },
-    { hour: "12:00", activity: 35, type: "general" },
-    { hour: "13:00", activity: 41, type: "quests" },
-    { hour: "14:00", activity: 48, type: "quests" },
-    { hour: "15:00", activity: 38, type: "general" },
-    { hour: "16:00", activity: 29, type: "general" },
-    { hour: "17:00", activity: 22, type: "general" }
-  ];
+  useEffect(() => {
+    if (!user || !profile || profile.role !== 'professor') return;
 
-  const getEngagementColor = (engagement: number) => {
-    if (engagement >= 90) return "text-green-600 bg-green-100";
-    if (engagement >= 80) return "text-blue-600 bg-blue-100";
-    if (engagement >= 70) return "text-yellow-600 bg-yellow-100";
-    return "text-red-600 bg-red-100";
-  };
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
 
-  const getCompletionColor = (completion: number) => {
-    if (completion >= 85) return "text-green-600";
-    if (completion >= 70) return "text-blue-600";
-    if (completion >= 60) return "text-yellow-600";
-    return "text-red-600";
-  };
+        // Get professor's quests with progress data
+        const questsWithProgress = await analyticsService.getQuestAnalytics(user.id);
+        
+        // Process quest analytics
+        const processedQuests: QuestAnalytics[] = questsWithProgress.map(quest => {
+          const progressData = quest.quest_progress || [];
+          const completedProgress = progressData.filter((p: any) => p.status === 'completed');
+          
+          const averageScore = completedProgress.length > 0 
+            ? completedProgress.reduce((sum: number, p: any) => sum + (p.score || 0), 0) / completedProgress.length
+            : 0;
 
-  const exportToExcel = () => {
-    const wb = XLSX.utils.book_new();
-    
-    // Student data
-    const studentData = [
-      ['Name', 'XP', 'Time Spent', 'Quests Completed', 'Engagement Score', 'Avg Score'],
-      ...engagementData.map(student => [
-        student.student, 
-        student.xp, 
-        student.timeSpent, 
-        student.questsCompleted, 
-        student.engagement, 
-        student.avgScore
-      ])
-    ];
-    
-    const ws1 = XLSX.utils.aoa_to_sheet(studentData);
-    XLSX.utils.book_append_sheet(wb, ws1, 'Student Analytics');
-    
-    // Quest completion data
-    const questData = [
-      ['Quest Title', 'Completion Rate (%)', 'Avg Time', 'Avg Score (%)', 'Drop-off Rate (%)', 'Students Assigned'],
-      ...questAnalytics.map(quest => [
-        quest.title,
-        quest.completion,
-        quest.avgTime,
-        quest.avgScore,
-        quest.dropOffRate,
-        quest.students
-      ])
-    ];
-    
-    const ws2 = XLSX.utils.aoa_to_sheet(questData);
-    XLSX.utils.book_append_sheet(wb, ws2, 'Quest Analytics');
-    
-    XLSX.writeFile(wb, `CoLink_Analytics_${new Date().toISOString().split('T')[0]}.xlsx`);
-  };
+          return {
+            quest,
+            totalStudents: progressData.length,
+            completedStudents: completedProgress.length,
+            averageScore: Math.round(averageScore),
+            completionRate: progressData.length > 0 ? (completedProgress.length / progressData.length) * 100 : 0
+          };
+        });
+
+        setQuestAnalytics(processedQuests);
+
+        // Get all students and their progress
+        const students = await userService.getUsersByRole('student');
+        const studentProgressData: StudentProgress[] = [];
+
+        for (const student of students) {
+          const stats = await analyticsService.getStudentStats(student.id);
+          studentProgressData.push({
+            id: student.id,
+            name: student.name || student.email,
+            email: student.email,
+            questsCompleted: stats.completedQuests,
+            averageScore: stats.averageScore,
+            lastActivity: student.created_at // This would be better with actual last activity timestamp
+          });
+        }
+
+        setStudentProgress(studentProgressData);
+
+        // Calculate total stats
+        const totalQuests = processedQuests.length;
+        const totalStudents = students.length;
+        const totalCompletions = processedQuests.reduce((sum, q) => sum + q.completedStudents, 0);
+        const totalAttempts = processedQuests.reduce((sum, q) => sum + q.totalStudents, 0);
+        const averageCompletion = totalAttempts > 0 ? (totalCompletions / totalAttempts) * 100 : 0;
+        const totalXPAwarded = processedQuests.reduce((sum, q) => 
+          sum + (q.quest.xp * q.completedStudents), 0);
+
+        setTotalStats({
+          totalQuests,
+          totalStudents,
+          averageCompletion: Math.round(averageCompletion),
+          totalXPAwarded
+        });
+
+      } catch (error) {
+        console.error('Error fetching analytics:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load analytics data",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, [user, profile, toast]);
+
+  if (!profile || profile.role !== 'professor') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
+        <Alert className="max-w-md">
+          <AlertDescription>
+            Access denied. This page is only available to professors.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading analytics...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Prepare chart data
+  const questCompletionData = questAnalytics.map(q => ({
+    name: q.quest.title.length > 15 ? q.quest.title.substring(0, 15) + '...' : q.quest.title,
+    completed: q.completedStudents,
+    total: q.totalStudents,
+    rate: q.completionRate
+  }));
+
+  const scoreDistributionData = questAnalytics
+    .filter(q => q.averageScore > 0)
+    .map(q => ({
+      name: q.quest.title.length > 15 ? q.quest.title.substring(0, 15) + '...' : q.quest.title,
+      score: q.averageScore
+    }));
+
+  const COLORS = ['#0388FC', '#0EA5E9', '#06B6D4', '#10B981', '#84CC16'];
 
   return (
-    <div className="min-h-screen bg-gradient-secondary p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white pb-20">
+      <div className="max-w-6xl mx-auto p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Link to="/professor/dashboard">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-primary">
-                Analytics Dashboard 📊
-              </h1>
-              <p className="text-muted-foreground">Track student engagement and quest performance</p>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <Select defaultValue="week">
-              <SelectTrigger className="w-40">
-                <Calendar className="h-4 w-4 mr-2" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="week">This Week</SelectItem>
-                <SelectItem value="month">This Month</SelectItem>
-                <SelectItem value="semester">This Semester</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
+        <div className="flex items-center gap-4 mb-6">
+          <Link to="/professor/dashboard">
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
             </Button>
-            <Button onClick={exportToExcel} className="bg-primary hover:bg-primary/90">
-              <Download className="h-4 w-4 mr-2" />
-              Export to Excel
-            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold text-primary">Analytics Dashboard 📊</h1>
+            <p className="text-muted-foreground">Monitor student progress and quest performance</p>
           </div>
         </div>
 
-        {/* Overview Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="text-center hover:shadow-card transition-all duration-300">
-            <CardContent className="pt-6">
+        {/* Summary Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="shadow-lg border-primary/20">
+            <CardContent className="p-6 text-center">
+              <Target className="h-8 w-8 text-primary mx-auto mb-2" />
+              <div className="text-2xl font-bold text-primary">{totalStats.totalQuests}</div>
+              <p className="text-sm text-muted-foreground">Total Quests</p>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg border-primary/20">
+            <CardContent className="p-6 text-center">
               <Users className="h-8 w-8 text-primary mx-auto mb-2" />
-              <div className="text-2xl font-bold text-primary">147</div>
-              <p className="text-sm text-muted-foreground">Total Students</p>
+              <div className="text-2xl font-bold text-primary">{totalStats.totalStudents}</div>
+              <p className="text-sm text-muted-foreground">Active Students</p>
             </CardContent>
           </Card>
-          
-          <Card className="text-center hover:shadow-card transition-all duration-300">
-            <CardContent className="pt-6">
-              <BarChart3 className="h-8 w-8 text-primary mx-auto mb-2" />
-              <div className="text-2xl font-bold text-primary">78%</div>
-              <p className="text-sm text-muted-foreground">Avg Engagement</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="text-center hover:shadow-card transition-all duration-300">
-            <CardContent className="pt-6">
-              <Clock className="h-8 w-8 text-primary mx-auto mb-2" />
-              <div className="text-2xl font-bold text-primary">2.4h</div>
-              <p className="text-sm text-muted-foreground">Avg Session Time</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="text-center hover:shadow-card transition-all duration-300">
-            <CardContent className="pt-6">
+
+          <Card className="shadow-lg border-primary/20">
+            <CardContent className="p-6 text-center">
               <TrendingUp className="h-8 w-8 text-primary mx-auto mb-2" />
-              <div className="text-2xl font-bold text-primary">+12%</div>
-              <p className="text-sm text-muted-foreground">Week over Week</p>
+              <div className="text-2xl font-bold text-primary">{totalStats.averageCompletion}%</div>
+              <p className="text-sm text-muted-foreground">Avg Completion</p>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg border-primary/20">
+            <CardContent className="p-6 text-center">
+              <Trophy className="h-8 w-8 text-primary mx-auto mb-2" />
+              <div className="text-2xl font-bold text-primary">{totalStats.totalXPAwarded}</div>
+              <p className="text-sm text-muted-foreground">XP Awarded</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Main Analytics */}
-        <Tabs defaultValue="students" className="space-y-4">
+        {/* Analytics Tabs */}
+        <Tabs defaultValue="quests" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="students" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Student Engagement
-            </TabsTrigger>
-            <TabsTrigger value="quests" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Quest Performance
-            </TabsTrigger>
-            <TabsTrigger value="time" className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Activity Patterns
-            </TabsTrigger>
+            <TabsTrigger value="quests">Quest Performance</TabsTrigger>
+            <TabsTrigger value="students">Student Progress</TabsTrigger>
+            <TabsTrigger value="insights">Insights</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="students">
-            <Card className="shadow-card">
+          <TabsContent value="quests" className="space-y-6">
+            {/* Quest Completion Chart */}
+            <Card className="shadow-lg border-primary/20">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-primary" />
-                  Student Engagement Analysis
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Detailed breakdown of individual student performance and engagement metrics
-                </p>
+                <CardTitle>Quest Completion Rates</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {engagementData.map((student, index) => (
-                    <Card key={index} className="border border-border/50">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div>
-                            <h4 className="font-semibold">{student.student}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {student.xp} XP • {student.questsCompleted} quests completed
-                            </p>
-                          </div>
-                          <Badge className={getEngagementColor(student.engagement)}>
-                            {student.engagement}% Engaged
-                          </Badge>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                          <div>
-                            <div className="text-muted-foreground">Engagement</div>
-                            <Progress value={student.engagement} className="mt-1 h-2" />
-                          </div>
-                          <div>
-                            <div className="text-muted-foreground">Time Spent</div>
-                            <div className="font-medium">{student.timeSpent}</div>
-                          </div>
-                          <div>
-                            <div className="text-muted-foreground">Avg Score</div>
-                            <div className="font-medium">{student.avgScore}%</div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline">Message</Button>
-                            <Button size="sm" variant="outline">Assign Quest</Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                {questCompletionData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={questCompletionData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="completed" fill="#0388FC" name="Completed" />
+                      <Bar dataKey="total" fill="#E2E8F0" name="Total Attempts" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    No quest data available
+                  </div>
+                )}
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="quests">
-            <Card className="shadow-card">
+            {/* Quest List with Analytics */}
+            <Card className="shadow-lg border-primary/20">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-primary" />
-                  Quest Performance Metrics
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Analysis of quest completion rates, average times, and student feedback
-                </p>
+                <CardTitle>Quest Details</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {questAnalytics.map((quest, index) => (
-                    <Card key={index} className="border border-border/50">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div>
-                            <h4 className="font-semibold">{quest.title}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {quest.students} students assigned
-                            </p>
-                          </div>
-                          <Badge variant="outline">{quest.feedback}</Badge>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-                          <div>
-                            <div className="text-muted-foreground">Completion</div>
-                            <div className={`font-bold ${getCompletionColor(quest.completion)}`}>
-                              {quest.completion}%
+                <ScrollArea className="h-[400px]">
+                  <div className="space-y-4">
+                    {questAnalytics.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No quests created yet</p>
+                        <Link to="/professor/quest-builder">
+                          <Button className="mt-4 bg-primary hover:bg-primary/90">
+                            Create Your First Quest
+                          </Button>
+                        </Link>
+                      </div>
+                    ) : (
+                      questAnalytics.map((analytics) => (
+                        <Card key={analytics.quest.id} className="border border-border/50">
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-lg mb-2">{analytics.quest.title}</h3>
+                                <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+                                  {analytics.quest.description}
+                                </p>
+                                
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                  <div>
+                                    <span className="text-muted-foreground">Students:</span>
+                                    <div className="font-medium">{analytics.totalStudents}</div>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Completed:</span>
+                                    <div className="font-medium text-green-600">{analytics.completedStudents}</div>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Completion Rate:</span>
+                                    <div className="font-medium">{Math.round(analytics.completionRate)}%</div>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Avg Score:</span>
+                                    <div className="font-medium">{analytics.averageScore}%</div>
+                                  </div>
+                                </div>
+                                
+                                <div className="mt-3">
+                                  <div className="flex justify-between text-sm mb-1">
+                                    <span>Progress</span>
+                                    <span>{Math.round(analytics.completionRate)}%</span>
+                                  </div>
+                                  <Progress value={analytics.completionRate} className="h-2" />
+                                </div>
+                              </div>
+                              
+                              <Badge 
+                                variant={analytics.quest.published ? "default" : "secondary"}
+                                className={analytics.quest.published ? "bg-green-100 text-green-800" : ""}
+                              >
+                                {analytics.quest.published ? "Published" : "Draft"}
+                              </Badge>
                             </div>
-                            <Progress value={quest.completion} className="mt-1 h-2" />
-                          </div>
-                          <div>
-                            <div className="text-muted-foreground">Avg Time</div>
-                            <div className="font-medium">{quest.avgTime}</div>
-                          </div>
-                          <div>
-                            <div className="text-muted-foreground">Avg Score</div>
-                            <div className="font-medium">{quest.avgScore}%</div>
-                          </div>
-                          <div>
-                            <div className="text-muted-foreground">Drop-off Rate</div>
-                            <div className="font-medium text-red-600">{quest.dropOffRate}%</div>
-                          </div>
-                          <div>
-                            <Button size="sm" variant="outline" className="w-full">
-                              View Details
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="time">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="shadow-card">
+          <TabsContent value="students" className="space-y-6">
+            {/* Student Progress Chart */}
+            <Card className="shadow-lg border-primary/20">
+              <CardHeader>
+                <CardTitle>Student Performance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {scoreDistributionData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={scoreDistributionData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis domain={[0, 100]} />
+                      <Tooltip />
+                      <Bar dataKey="score" fill="#0388FC" name="Average Score %" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    No student performance data available
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Student List */}
+            <Card className="shadow-lg border-primary/20">
+              <CardHeader>
+                <CardTitle>Student Overview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[400px]">
+                  <div className="space-y-3">
+                    {studentProgress.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No student data available</p>
+                      </div>
+                    ) : (
+                      studentProgress.map((student) => (
+                        <Card key={student.id} className="border border-border/50">
+                          <CardContent className="p-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="font-medium">{student.name}</h4>
+                                <p className="text-sm text-muted-foreground">{student.email}</p>
+                              </div>
+                              <div className="text-right">
+                                <div className="flex items-center gap-4 text-sm">
+                                  <div>
+                                    <span className="text-muted-foreground">Completed:</span>
+                                    <span className="ml-1 font-medium">{student.questsCompleted}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Avg Score:</span>
+                                    <span className="ml-1 font-medium">{student.averageScore}%</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="insights" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="shadow-lg border-primary/20">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-primary" />
-                    Daily Activity Heatmap
+                    <TrendingUp className="h-5 w-5 text-green-500" />
+                    Top Performing Quests
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {timeAnalytics.map((data, index) => (
-                      <div key={index} className="flex items-center gap-3">
-                        <div className="w-16 text-sm text-muted-foreground">{data.hour}</div>
-                        <div className="flex-1">
-                          <Progress value={(data.activity / 60) * 100} className="h-4" />
+                    {questAnalytics
+                      .sort((a, b) => b.completionRate - a.completionRate)
+                      .slice(0, 5)
+                      .map((analytics, index) => (
+                        <div key={analytics.quest.id} className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-sm">{analytics.quest.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {analytics.completedStudents}/{analytics.totalStudents} completed
+                            </p>
+                          </div>
+                          <Badge className="bg-green-100 text-green-800">
+                            {Math.round(analytics.completionRate)}%
+                          </Badge>
                         </div>
-                        <div className="w-12 text-sm font-medium">{data.activity}</div>
-                        <Badge variant="outline" className="text-xs">
-                          {data.type}
-                        </Badge>
-                      </div>
-                    ))}
+                      ))}
+                    {questAnalytics.length === 0 && (
+                      <p className="text-muted-foreground text-sm">No quest data available</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="shadow-card">
+              <Card className="shadow-lg border-primary/20">
                 <CardHeader>
-                  <CardTitle>Weekly Trends</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-amber-500" />
+                    Needs Attention
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent>
                   <div className="space-y-3">
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Quest Completion</span>
-                        <span className="text-green-600">↑ 12%</span>
-                      </div>
-                      <Progress value={85} className="h-2" />
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Average Engagement</span>
-                        <span className="text-green-600">↑ 8%</span>
-                      </div>
-                      <Progress value={78} className="h-2" />
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Messages Sent</span>
-                        <span className="text-blue-600">↑ 5%</span>
-                      </div>
-                      <Progress value={65} className="h-2" />
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Quiz Participation</span>
-                        <span className="text-green-600">↑ 15%</span>
-                      </div>
-                      <Progress value={89} className="h-2" />
-                    </div>
+                    {questAnalytics
+                      .filter(q => q.completionRate < 50 && q.totalStudents > 0)
+                      .slice(0, 5)
+                      .map((analytics) => (
+                        <div key={analytics.quest.id} className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-sm">{analytics.quest.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Low completion rate
+                            </p>
+                          </div>
+                          <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+                            {Math.round(analytics.completionRate)}%
+                          </Badge>
+                        </div>
+                      ))}
+                    {questAnalytics.filter(q => q.completionRate < 50 && q.totalStudents > 0).length === 0 && (
+                      <p className="text-muted-foreground text-sm">All quests performing well!</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -424,6 +493,9 @@ const Analytics = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Bottom Navigation */}
+      <BottomNavigation userRole="professor" />
     </div>
   );
 };
