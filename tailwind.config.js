@@ -18,22 +18,22 @@ export default {
     },
     extend: {
       colors: {
-        // Coventry University Colors - ONLY Blue #003A70 and White #FFFFFF
-        'coventry-blue': '#003A70',
+        // Updated Colors - Blue #0388fc and White #FFFFFF
+        'coventry-blue': '#0388fc',
         'coventry-white': '#FFFFFF',
         
         border: "#e2e8f0",
         input: "#f8fafc",
-        ring: "#003A70",
+        ring: "#0388fc",
         background: "#FFFFFF",
-        foreground: "#003A70",
+        foreground: "#0388fc",
         primary: {
-          DEFAULT: "#003A70", // Coventry Blue
+          DEFAULT: "#0388fc", // New Blue
           foreground: "#FFFFFF", // White
         },
         secondary: {
           DEFAULT: "#f8fafc",
-          foreground: "#003A70",
+          foreground: "#0388fc",
         },
         destructive: {
           DEFAULT: "#dc2626",
@@ -45,15 +45,15 @@ export default {
         },
         accent: {
           DEFAULT: "#f8fafc",
-          foreground: "#003A70",
+          foreground: "#0388fc",
         },
         popover: {
           DEFAULT: "#FFFFFF",
-          foreground: "#003A70",
+          foreground: "#0388fc",
         },
         card: {
           DEFAULT: "#FFFFFF",
-          foreground: "#003A70",
+          foreground: "#0388fc",
         },
       },
       borderRadius: {
@@ -86,14 +86,14 @@ export default {
         "confetti": "confetti 3s linear infinite",
       },
       backgroundImage: {
-        'gradient-primary': 'linear-gradient(135deg, #003A70 0%, #0056A3 100%)',
+        'gradient-primary': 'linear-gradient(135deg, #0388fc 0%, #0ea5e9 100%)',
         'gradient-secondary': 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-        'gradient-accent': 'linear-gradient(135deg, #003A70 0%, #FFFFFF 100%)',
+        'gradient-accent': 'linear-gradient(135deg, #0388fc 0%, #FFFFFF 100%)',
       },
       boxShadow: {
-        'primary': '0 4px 14px 0 rgba(0, 58, 112, 0.3)',
+        'primary': '0 4px 14px 0 rgba(3, 136, 252, 0.3)',
         'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-        'badge': '0 8px 25px -5px rgba(0, 58, 112, 0.4)',
+        'badge': '0 8px 25px -5px rgba(3, 136, 252, 0.4)',
       },
     },
   },
