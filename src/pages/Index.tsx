@@ -2,6 +2,7 @@ import { GraduationCap, Users, Trophy, Target, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
+import CoventryLogo from "@/components/CoventryLogo";
 
 const Index = () => {
   return (
@@ -21,8 +22,8 @@ const Index = () => {
         <div className="max-w-4xl mx-auto text-center space-y-8">
           {/* Header */}
           <div className="space-y-6">
-            <div className="w-32 h-32 mx-auto bg-primary rounded-full flex items-center justify-center mb-6">
-              <GraduationCap className="h-16 w-16 text-white" />
+            <div className="mb-6">
+              <CoventryLogo size="xl" className="mx-auto mb-4" />
             </div>
             <h1 className="text-4xl md:text-6xl font-bold text-primary">
               CoLink

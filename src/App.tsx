@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider"; 
 import TopBar from "@/components/layout/TopBar"; // ✅ top bar
 import ChatBot from "@/components/ChatBot";
+import { useInitializeDemoData } from "@/hooks/useInitializeDemoData";
 
 // Pages
 import Index from "./pages/Index";
@@ -27,14 +28,18 @@ console.log("Login component:", Login);
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
+const App = () => {
+  // Initialize demo data on app start
+  useInitializeDemoData();
 
-        <BrowserRouter>
+  return (
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+
+          <BrowserRouter>
           {/* 🔝 Верхний бар всегда закреплён */}
           <TopBar />
 
@@ -67,13 +72,14 @@ const App = () => (
             </Routes>
           </div>
 
-          {/* 🤖 Чат-бот виден всегда */}
-          <ChatBot />
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
-);
+            {/* 🤖 Чат-бот виден всегда */}
+            <ChatBot />
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  );
+};
 
 export default App;
 // TODO: Add chatbot UI
