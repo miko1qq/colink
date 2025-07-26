@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Link } from "react-router-dom";
 import BottomNavigation from "@/components/BottomNavigation";
 import TopRightNavigation from "@/components/TopRightNavigation";
+import DailyRewards from "@/components/DailyRewards";
 
 const StudentDashboard = () => {
   const studentData = {
@@ -157,6 +158,11 @@ const StudentDashboard = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Daily Rewards Section */}
+        <div className="mt-8">
+          <DailyRewards />
         </div>
 
       </div>

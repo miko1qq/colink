@@ -40,7 +40,7 @@ const Index = () => {
             <Link to="/login?role=student">
               <Card className="bg-white shadow-lg hover:shadow-primary/30 transition-all duration-300 hover:scale-105 cursor-pointer h-full">
                 <CardHeader className="text-center pb-4">
-                  <div className="w-16 h-16 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-gradient-to-r from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Trophy className="h-8 w-8 text-white" />
                   </div>
                   <CardTitle className="text-2xl">I'm a Student 🎓</CardTitle>
@@ -63,7 +63,7 @@ const Index = () => {
                       <span>Compete on Leaderboards</span>
                     </div>
                   </div>
-                  <Button className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:opacity-90">
+                  <Button className="w-full bg-gradient-to-r from-primary to-primary/80 hover:opacity-90">
                     Enter as Student
                   </Button>
                 </CardContent>
@@ -73,7 +73,7 @@ const Index = () => {
             <Link to="/login?role=professor">
               <Card className="bg-white shadow-lg hover:shadow-primary/30 transition-all duration-300 hover:scale-105 cursor-pointer h-full">
                 <CardHeader className="text-center pb-4">
-                  <div className="w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-gradient-to-r from-primary/80 to-primary rounded-full flex items-center justify-center mx-auto mb-4">
                     <Users className="h-8 w-8 text-white" />
                   </div>
                   <CardTitle className="text-2xl">I'm a Professor 👩‍🏫</CardTitle>
@@ -96,7 +96,7 @@ const Index = () => {
                       <span>Track Student Analytics</span>
                     </div>
                   </div>
-                  <Button className="w-full bg-gradient-to-r from-green-400 to-emerald-500 hover:opacity-90">
+                  <Button className="w-full bg-gradient-to-r from-primary/80 to-primary hover:opacity-90">
                     Enter as Professor
                   </Button>
                 </CardContent>

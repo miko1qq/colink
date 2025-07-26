@@ -2,6 +2,7 @@ import logo from "@/assets/logo.png";
 import { Moon, Sun, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TopRightNavigation from "../TopRightNavigation";
+import NotificationDropdown from "../NotificationDropdown";
 import { useTheme } from "next-themes"; 
 
 const TopBar = () => {
@@ -37,6 +38,8 @@ const TopBar = () => {
           </Button>
 
           {/* Уведомления */}
+          <NotificationDropdown />
+          
           <TopRightNavigation />
         </div>
       </div>

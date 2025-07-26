@@ -20,6 +20,8 @@ import QuestBuilder from "./pages/professor/QuestBuilder";
 import Analytics from "./pages/professor/Analytics";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
+import Quiz from "./pages/Quiz";
+import QnA from "./pages/QnA";
 console.log("Login component:", Login);
 
 const queryClient = new QueryClient();
@@ -55,6 +57,8 @@ const App = () => (
               {/* Shared */}
               <Route path="/profile" element={<Profile />} />
               <Route path="/messaging" element={<Messaging />} />
+              <Route path="/quiz" element={<Quiz />} />
+              <Route path="/qna" element={<QnA />} />
 
               {/* Not Found */}
               <Route path="*" element={<NotFound />} />

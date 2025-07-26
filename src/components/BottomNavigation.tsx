@@ -1,4 +1,4 @@
-import { Target, Users, User } from "lucide-react";
+import { Target, Users, User, Brain, HelpCircle } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,14 +31,15 @@ const BottomNavigation = ({
 
   const studentNav = [
     { icon: Target, label: 'Quests', path: '/student/quests' },
-    { icon: Users, label: 'Leaderboard', path: '/student/leaderboard' },
-    { icon: User, label: 'Profile', path: '/profile' }
+    { icon: Brain, label: 'Quiz', path: '/quiz' },
+    { icon: HelpCircle, label: 'Q&A', path: '/qna' },
+    { icon: Users, label: 'Leaderboard', path: '/student/leaderboard' }
   ];
 
   const professorNav = [
     { icon: Target, label: 'Quests', path: '/professor/quest-builder' },
-    { icon: Users, label: 'Analytics', path: '/professor/analytics' },
-    { icon: User, label: 'Profile', path: '/profile' }
+    { icon: HelpCircle, label: 'Q&A', path: '/qna' },
+    { icon: Users, label: 'Analytics', path: '/professor/analytics' }
   ];
 
   const navItems = userRole === 'student' ? studentNav : professorNav;
