@@ -63,9 +63,16 @@ const Index = () => {
                       <span>Compete on Leaderboards</span>
                     </div>
                   </div>
-                  <Button className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:opacity-90">
-                    Enter as Student
-                  </Button>
+                  <div className="space-y-2">
+                    <Button className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:opacity-90">
+                      Enter as Student
+                    </Button>
+                    <Link to="/signup?role=student">
+                      <Button variant="outline" className="w-full">
+                        Sign Up as Student
+                      </Button>
+                    </Link>
+                  </div>
                 </CardContent>
               </Card>
             </Link>
@@ -96,9 +103,16 @@ const Index = () => {
                       <span>Track Student Analytics</span>
                     </div>
                   </div>
-                  <Button className="w-full bg-gradient-to-r from-green-400 to-emerald-500 hover:opacity-90">
-                    Enter as Professor
-                  </Button>
+                  <div className="space-y-2">
+                    <Button className="w-full bg-gradient-to-r from-green-400 to-emerald-500 hover:opacity-90">
+                      Enter as Professor
+                    </Button>
+                    <Link to="/signup?role=professor">
+                      <Button variant="outline" className="w-full">
+                        Sign Up as Professor
+                      </Button>
+                    </Link>
+                  </div>
                 </CardContent>
               </Card>
             </Link>
