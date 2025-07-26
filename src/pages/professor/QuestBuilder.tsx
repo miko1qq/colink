@@ -1,4 +1,4 @@
-import { ArrowLeft, Plus, Target, Save, Users, Clock, Star, BookOpen } from "lucide-react";
+import { ArrowLeft, Plus, Target, Save, Users, Clock, Star, BookOpen, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,10 +7,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { questService } from "@/lib/supabaseService";
+import { supabase } from "@/lib/supabaseClient";
 
 const QuestBuilder = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const [questData, setQuestData] = useState({
     title: "",
     description: "",
@@ -26,6 +31,7 @@ const QuestBuilder = () => {
   });
 
   const [currentTag, setCurrentTag] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const categories = [
     "Academic Assignment",
@@ -78,9 +84,80 @@ const QuestBuilder = () => {
     }));
   };
 
-  const handleSaveQuest = () => {
-    // Save quest logic here
-    console.log("Saving quest:", questData);
+  const handleSaveQuest = async () => {
+    if (!questData.title || !questData.description) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in the title and description fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      const questToCreate = {
+        title: questData.title,
+        description: questData.description,
+        instructions: questData.instructions || questData.description,
+        xp_reward: questData.xpReward,
+        difficulty: questData.difficulty as 'easy' | 'medium' | 'hard',
+        category: questData.category,
+        time_estimate: questData.timeEstimate,
+        due_date: questData.dueDate ? new Date(questData.dueDate).toISOString() : undefined,
+        is_active: questData.isActive,
+        created_by: user.id,
+      };
+
+      const createdQuest = await questService.createQuest(questToCreate);
+      
+      if (createdQuest) {
+        toast({
+          title: "Quest Successfully Created! 🎉",
+          description: `"${questData.title}" is now available to students.`,
+          action: (
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <span className="text-green-500 font-medium">Success</span>
+            </div>
+          ),
+        });
+
+        // Reset form
+        setQuestData({
+          title: "",
+          description: "",
+          category: "",
+          difficulty: "",
+          xpReward: 100,
+          timeEstimate: "",
+          dueDate: "",
+          instructions: "",
+          isActive: true,
+          assignedStudents: "all",
+          tags: []
+        });
+
+        // Navigate back to dashboard after a short delay
+        setTimeout(() => {
+          navigate('/professor/dashboard');
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Error creating quest:', error);
+      toast({
+        title: "Failed to Create Quest",
+        description: "There was an error creating your quest. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDifficultyChange = (difficulty: string) => {
@@ -104,7 +181,7 @@ const QuestBuilder = () => {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-primary">
               Quest Builder 🎯
             </h1>
             <p className="text-muted-foreground">Create engaging learning experiences for your students</p>
@@ -374,11 +451,20 @@ const QuestBuilder = () => {
             <div className="space-y-3">
               <Button
                 onClick={handleSaveQuest}
-                className="w-full bg-gradient-primary hover:opacity-90"
-                disabled={!questData.title || !questData.description}
+                className="w-full bg-primary hover:bg-primary/90"
+                disabled={!questData.title || !questData.description || loading}
               >
-                <Save className="h-4 w-4 mr-2" />
-                {questData.isActive ? "Create & Activate Quest" : "Save as Draft"}
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Creating Quest...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    {questData.isActive ? "Create & Activate Quest" : "Save as Draft"}
+                  </>
+                )}
               </Button>
               
               <Button variant="outline" className="w-full">

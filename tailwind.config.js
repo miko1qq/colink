@@ -18,42 +18,42 @@ export default {
     },
     extend: {
       colors: {
-        // Coventry University Colors
+        // Coventry University Colors - ONLY Blue #003A70 and White #FFFFFF
         'coventry-blue': '#003A70',
         'coventry-white': '#FFFFFF',
         
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        border: "#e2e8f0",
+        input: "#f8fafc",
+        ring: "#003A70",
+        background: "#FFFFFF",
+        foreground: "#003A70",
         primary: {
           DEFAULT: "#003A70", // Coventry Blue
           foreground: "#FFFFFF", // White
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "#f8fafc",
+          foreground: "#003A70",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "#dc2626",
+          foreground: "#FFFFFF",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "#f1f5f9",
+          foreground: "#64748b",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "#f8fafc",
+          foreground: "#003A70",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "#FFFFFF",
+          foreground: "#003A70",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "#FFFFFF",
+          foreground: "#003A70",
         },
       },
       borderRadius: {
