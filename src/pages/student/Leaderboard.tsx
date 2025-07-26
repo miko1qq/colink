@@ -44,9 +44,9 @@ const Leaderboard = () => {
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
-      case 1: return <Trophy className="h-6 w-6 text-yellow-500" />;
-      case 2: return <Medal className="h-6 w-6 text-gray-400" />;
-      case 3: return <Medal className="h-6 w-6 text-amber-600" />;
+      case 1: return <Trophy className="h-6 w-6 text-primary" />;
+      case 2: return <Medal className="h-6 w-6 text-primary" />;
+      case 3: return <Medal className="h-6 w-6 text-primary" />;
       default: return <span className="text-lg font-bold text-muted-foreground">#{rank}</span>;
     }
   };
@@ -54,9 +54,9 @@ const Leaderboard = () => {
   const getRankBg = (rank: number, isCurrentUser?: boolean) => {
     if (isCurrentUser) return "bg-primary/10 border-primary/30 border-2";
     switch (rank) {
-      case 1: return "bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200";
-      case 2: return "bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200";
-      case 3: return "bg-gradient-to-r from-amber-50 to-amber-100 border-amber-200";
+      case 1: return "bg-primary/10 border-primary/20";
+      case 2: return "bg-primary/5 border-primary/10";
+      case 3: return "bg-primary/10 border-primary/20";
       default: return "bg-white border-border";
     }
   };
