@@ -18,11 +18,14 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 210 15% 20%;
 
-    /* New Blue (#037ffc) as primary */
-    --primary: 207 100% 51%;
+    /* Coventry Blue (#003A70) as primary */
+    /* Hex #003A70 → HSL ≈ 209 100% 22% */
+    --primary: 209 100% 22%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 207 100% 45%;
-    --primary-light: 207 100% 85%;
+    /* Slightly lighter Coventry Blue for hover states */
+    --primary-hover: 209 100% 28%;
+    /* Extra-light tint for subtle UI highlights */
+    --primary-light: 209 100% 94%;
 
     --secondary: 210 25% 96%;
     --secondary-foreground: 210 15% 20%;
@@ -43,7 +46,7 @@ All colors MUST be HSL.
     --radius: 0.75rem;
 
     /* Gamification colors */
-    --xp-bar: 207 100% 51%;
+    --xp-bar: 209 100% 22%;
     --xp-background: 210 20% 95%;
     --badge-gold: 45 90% 60%;
     --badge-silver: 0 0% 70%;
