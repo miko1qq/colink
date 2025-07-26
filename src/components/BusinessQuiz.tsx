@@ -50,27 +50,27 @@ const BusinessQuiz = ({ onComplete }: BusinessQuizProps) => {
     },
     {
       id: 3,
-      question: "What does ROI stand for in business?",
+      question: "What does SWOT analysis stand for?",
       options: [
-        "Return on Investment",
-        "Rate of Interest",
-        "Revenue over Income",
-        "Risk of Investment"
+        "Strengths, Weaknesses, Opportunities, Threats",
+        "Systems, Workflow, Organization, Technology",
+        "Sales, Workforce, Operations, Targets",
+        "Strategic, Workload, Objectives, Timeline"
       ],
       correctAnswer: 0,
-      explanation: "ROI stands for Return on Investment, which measures the efficiency of an investment by comparing the gain or loss to its cost."
+      explanation: "SWOT analysis is a strategic planning technique that evaluates Strengths, Weaknesses, Opportunities, and Threats of a business or project."
     },
     {
       id: 4,
-      question: "In project management, what does the term 'stakeholder' refer to?",
+      question: "What is the break-even point in business?",
       options: [
-        "Only the project manager and team members",
-        "Anyone who owns company stock",
-        "Any individual or group affected by or having an interest in the project",
-        "Only the customers and clients"
+        "The point where a company goes public",
+        "The point where total revenue equals total costs",
+        "The maximum profit a company can achieve",
+        "The point where a company must close down"
       ],
-      correctAnswer: 2,
-      explanation: "A stakeholder is any individual, group, or organization that can affect, be affected by, or have an interest in a project or business."
+      correctAnswer: 1,
+      explanation: "The break-even point is where total revenue equals total costs, meaning the business is not making a profit or loss."
     }
   ];
 
