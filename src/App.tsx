@@ -20,6 +20,7 @@ import QuestBuilder from "./pages/professor/QuestBuilder";
 import Analytics from "./pages/professor/Analytics";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 console.log("Login component:", Login);
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
               {/* Public */}
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
 
               {/* Student */}
               <Route path="/student/dashboard" element={<StudentDashboard />} />

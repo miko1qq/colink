@@ -83,14 +83,14 @@ const TopRightNavigation = () => {
   const xpPercentage = Math.min((xp / 500) * 100, 100);
 
   return (
-    <div className="fixed top-4 right-4 z-50 flex items-center gap-4">
+    <div className="flex items-center gap-2">
       {/* Search */}
       <Dialog>
         <DialogTrigger asChild>
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
-            className="bg-white/80 backdrop-blur dark:bg-black/40"
+            className="text-muted-foreground"
           >
             <Search className="w-4 h-4" />
           </Button>
@@ -108,9 +108,9 @@ const TopRightNavigation = () => {
       <Popover>
         <PopoverTrigger asChild>
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
-            className="relative bg-white/80 backdrop-blur dark:bg-black/40"
+            className="relative text-muted-foreground"
           >
             <Bell className="w-4 h-4" />
             {notifications.some((n) => !n.read) && (

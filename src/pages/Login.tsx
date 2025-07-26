@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,6 +78,16 @@ const Login = () => {
               "Log In"
             )}
           </Button>
+
+          <div className="text-center text-sm">
+            <span className="text-muted-foreground">Don't have an account? </span>
+            <Link 
+              to={`/signup?role=${role}`} 
+              className="text-primary hover:underline font-medium"
+            >
+              Sign Up
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>
