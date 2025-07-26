@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { User, Trophy, Target, Clock, Calendar, Star, Upload, Edit2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,14 +9,18 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabaseClient";
 import { profileService, questProgressService, badgeService } from "@/lib/supabaseService";
+import { useUser } from "@/hooks/useUser";
+import { useToast } from "@/hooks/use-toast";
 
 const StudentProfile = () => {
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const { user, profile, uploadAvatar } = useUser();
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [badges, setBadges] = useState<any[]>([]);
   const [completedQuests, setCompletedQuests] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   // Student data - this would come from Supabase
   const studentData = {
@@ -49,21 +53,49 @@ const StudentProfile = () => {
   ];
 
   useEffect(() => {
-    loadProfile();
-  }, []);
+    setLoading(false);
+  }, [profile]);
 
-  const loadProfile = async () => {
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAvatarUploading(true);
+    
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUser(user);
-        const userProfile = await profileService.getProfile(user.id);
-        setProfile(userProfile);
-      }
+      await uploadAvatar(file);
+      toast({
+        title: "Avatar updated",
+        description: "Your profile photo has been updated successfully.",
+      });
     } catch (error) {
-      console.error('Error loading profile:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to update profile photo. Please try again.",
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false);
+      setAvatarUploading(false);
     }
   };
 
@@ -95,15 +127,45 @@ const StudentProfile = () => {
             <div className="flex flex-col lg:flex-row items-center gap-8">
               {/* Avatar Section */}
               <div className="text-center">
-                <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-primary/20">
-                  <AvatarImage src={studentData.avatar} alt={studentData.full_name} />
-                  <AvatarFallback className="text-2xl font-bold bg-primary text-white">
-                    {studentData.full_name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <Button variant="outline" size="sm" className="border-primary/20">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Change Photo
+                <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                  <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-primary/20 transition-all group-hover:border-primary/40">
+                    <AvatarImage 
+                      src={profile?.avatar_url || studentData.avatar} 
+                      alt={profile?.full_name || studentData.full_name} 
+                    />
+                    <AvatarFallback className="text-2xl font-bold bg-primary text-white">
+                      {(profile?.full_name || studentData.full_name).split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute inset-0 bg-black/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Upload className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleAvatarUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="border-primary/20"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={avatarUploading}
+                >
+                  {avatarUploading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Change Photo
+                    </>
+                  )}
                 </Button>
               </div>
 

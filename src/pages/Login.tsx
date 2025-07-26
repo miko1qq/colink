@@ -54,11 +54,19 @@ const Login = () => {
       }
 
       if (data.user) {
+        // Get user profile to determine correct redirect
+        const { profile } = await authService.getCurrentUser();
+        
+        const redirectPath = profile?.role === 'student' 
+          ? '/student/dashboard' 
+          : '/professor/dashboard';
+          
         toast({
           title: "Login Successful",
           description: `Welcome back to CoLink!`,
         });
-        navigate(`/${role}/dashboard`);
+        
+        navigate(redirectPath);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
@@ -86,11 +94,19 @@ const Login = () => {
       }
 
       if (data.user) {
+        // Get user profile to determine correct redirect
+        const { profile } = await authService.getCurrentUser();
+        
+        const redirectPath = profile?.role === 'student' 
+          ? '/student/dashboard' 
+          : '/professor/dashboard';
+          
         toast({
           title: "Demo Login Successful",
           description: `Welcome to CoLink demo!`,
         });
-        navigate(`/${role}/dashboard`);
+        
+        navigate(redirectPath);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Demo login failed');
