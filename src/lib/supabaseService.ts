@@ -620,3 +620,102 @@ export const analyticsService = {
     };
   }
 };
+
+// Quiz Services
+export const quizService = {
+  async getAllQuizzes() {
+    const { data, error } = await supabase
+      .from('quizzes')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching quizzes:', error);
+      return [];
+    }
+
+    return data || [];
+  },
+
+  async getQuizById(id: string) {
+    const { data, error } = await supabase
+      .from('quizzes')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching quiz:', error);
+      return null;
+    }
+
+    return data;
+  },
+
+  async saveQuizAttempt(attempt: {
+    student_id: string;
+    quest_id: string;
+    answers: any[];
+    score: number;
+    total_questions: number;
+    completed_at: string;
+  }) {
+    const { data, error } = await supabase
+      .from('quiz_attempts')
+      .insert(attempt)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error saving quiz attempt:', error);
+      return null;
+    }
+
+    return data;
+  }
+};
+
+// Profile Services
+export const profileService = {
+  async getProfileByUserId(userId: string) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching profile by user_id:', error);
+      return null;
+    }
+
+    return data;
+  },
+
+  async getProfile(userId: string) {
+    // Try profiles table first
+    let { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    // If not found in profiles, try users table
+    if (error || !data) {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (userError) {
+        console.error('Error fetching profile:', userError);
+        return null;
+      }
+
+      return userData;
+    }
+
+    return data;
+  }
+};
