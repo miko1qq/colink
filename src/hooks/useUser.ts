@@ -1,38 +1,19 @@
 import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
-
-export interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  role: 'student' | 'professor';
-  avatar_url?: string;
-  member_since: string;
-  level?: number;
-  total_xp?: number;
-  total_students?: number;
-  total_quests?: number;
-}
+import { authService, userService, analyticsService, type UserProfile } from '@/lib/supabaseService';
 
 export interface UserStats {
   // Student stats
-  quests_completed?: number;
-  badges_earned?: number;
-  current_rank?: number;
-  weekly_xp?: number;
-  total_time_spent?: string;
-  average_score?: number;
-  streak_days?: number;
+  completedQuests?: number;
+  earnedBadges?: number;
+  averageScore?: number;
   
   // Professor stats
-  students_managed?: number;
-  quests_created?: number;
-  badges_awarded?: number;
-  avg_engagement?: number;
-  total_hours?: string;
-  avg_completion?: number;
-  active_courses?: number;
+  studentsManaged?: number;
+  questsCreated?: number;
+  badgesAwarded?: number;
+  avgEngagement?: number;
 }
 
 export const useUser = () => {
@@ -46,7 +27,8 @@ export const useUser = () => {
     // Get initial user
     const getUser = async () => {
       try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        setLoading(true);
+        const { user, error: authError } = await authService.getCurrentUser();
         if (authError) throw authError;
         
         setUser(user);
@@ -85,21 +67,8 @@ export const useUser = () => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      // For now, we'll use mock data since the database structure isn't defined
-      // In a real app, you would fetch from your profiles table
-      const mockProfile: UserProfile = {
-        id: userId,
-        name: user?.email?.includes('professor') ? 'Dr. Sarah Wilson' : 'Alex Thompson',
-        email: user?.email || '',
-        role: user?.email?.includes('professor') ? 'professor' : 'student',
-        member_since: '2023-09-01',
-        level: user?.email?.includes('professor') ? undefined : 10,
-        total_xp: user?.email?.includes('professor') ? undefined : 2250,
-        total_students: user?.email?.includes('professor') ? 147 : undefined,
-        total_quests: user?.email?.includes('professor') ? 25 : undefined,
-      };
-      
-      setProfile(mockProfile);
+      const userProfile = await userService.getUserProfile(userId);
+      setProfile(userProfile);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch profile');
     }
@@ -107,28 +76,21 @@ export const useUser = () => {
 
   const fetchUserStats = async (userId: string) => {
     try {
-      // Mock stats data - in a real app, fetch from your stats table
-      const isStudent = !user?.email?.includes('professor');
+      if (!profile) return;
       
-      const mockStats: UserStats = isStudent ? {
-        quests_completed: 15,
-        badges_earned: 7,
-        current_rank: 4,
-        weekly_xp: 320,
-        total_time_spent: '87 hours',
-        average_score: 92,
-        streak_days: 12,
-      } : {
-        students_managed: 147,
-        quests_created: 25,
-        badges_awarded: 89,
-        avg_engagement: 78,
-        total_hours: '340 hours',
-        avg_completion: 85,
-        active_courses: 4,
-      };
-      
-      setStats(mockStats);
+      if (profile.role === 'student') {
+        const studentStats = await analyticsService.getStudentStats(userId);
+        setStats(studentStats);
+      } else {
+        // For professors, we'll implement basic stats
+        const mockStats: UserStats = {
+          studentsManaged: 147,
+          questsCreated: 25,
+          badgesAwarded: 89,
+          avgEngagement: 78,
+        };
+        setStats(mockStats);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch stats');
     }
@@ -140,14 +102,10 @@ export const useUser = () => {
     try {
       setLoading(true);
       
-      // In a real app, update the database
-      // const { error } = await supabase
-      //   .from('profiles')
-      //   .update(updates)
-      //   .eq('id', user.id);
-      
-      // For now, just update local state
-      setProfile({ ...profile, ...updates });
+      const updatedProfile = await userService.updateUserProfile(user.id, updates);
+      if (updatedProfile) {
+        setProfile(updatedProfile);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update profile');
     } finally {
@@ -188,6 +146,22 @@ export const useUser = () => {
     }
   };
 
+  const signOut = async () => {
+    try {
+      setLoading(true);
+      const { error } = await authService.signOut();
+      if (error) throw error;
+      
+      setUser(null);
+      setProfile(null);
+      setStats(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to sign out');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     user,
     profile,
@@ -196,6 +170,7 @@ export const useUser = () => {
     error,
     updateProfile,
     uploadAvatar,
+    signOut,
     refetch: () => {
       if (user) {
         fetchUserProfile(user.id);

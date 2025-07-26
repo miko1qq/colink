@@ -4,67 +4,103 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft, User, GraduationCap } from "lucide-react";
-import { supabase } from "../lib/supabaseClient";
-import { loginDemoUser } from "../lib/demoData";
+import { authService } from "@/lib/supabaseService";
 import { Link } from "react-router-dom";
 import CoventryLogo from "@/components/CoventryLogo";
-import DemoDataInitializer from "@/components/DemoDataInitializer";
-
+import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
   const [searchParams] = useSearchParams();
-  const role = searchParams.get("role"); // student or professor
+  const role = searchParams.get("role") as 'student' | 'professor' | null;
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Переброс, если уже вошел
+  // Redirect if already logged in
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
+    const checkAuth = async () => {
+      const { session } = await authService.getCurrentSession();
+      if (session && role) {
         navigate(`/${role}/dashboard`);
       }
-    });
-  }, []);
+    };
+    checkAuth();
+  }, [role, navigate]);
 
-  // Переброс, если нет роли
+  // Redirect if no role specified
   useEffect(() => {
     if (!role) {
       navigate("/");
     }
-  }, [role]);
+  }, [role, navigate]);
 
-  const handleLogin = async () => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) return;
+
     setError("");
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
 
-    if (error) {
-      setError(error.message);
-    } else {
-      navigate(`/${role}/dashboard`);
+    try {
+      const { data, error } = await authService.signIn(email, password);
+      
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      if (data.user) {
+        toast({
+          title: "Login Successful",
+          description: `Welcome back to CoLink!`,
+        });
+        navigate(`/${role}/dashboard`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDemoLogin = async () => {
     setError("");
     setLoading(true);
-    const { error } = await loginDemoUser(role as 'student' | 'professor');
-    setLoading(false);
 
-    if (error) {
-      setError(error.message || 'Demo login failed');
-    } else {
-      navigate(`/${role}/dashboard`);
+    try {
+      const demoCredentials = {
+        student: { email: 'student@coventry.edu', password: 'student123' },
+        professor: { email: 'professor@coventry.edu', password: 'professor123' }
+      };
+
+      const { email: demoEmail, password: demoPassword } = demoCredentials[role!];
+      const { data, error } = await authService.signIn(demoEmail, demoPassword);
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      if (data.user) {
+        toast({
+          title: "Demo Login Successful",
+          description: `Welcome to CoLink demo!`,
+        });
+        navigate(`/${role}/dashboard`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Demo login failed');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-secondary">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
       {/* Back button */}
       <div className="absolute top-4 left-4 z-20">
         <Link to="/">
@@ -76,7 +112,7 @@ const Login = () => {
       </div>
 
       <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-primary border-2 border-primary/20">
+        <Card className="w-full max-w-md shadow-lg border-2 border-primary/20">
           <CardHeader className="text-center">
             <CoventryLogo size="md" className="mx-auto mb-4" />
             <CardTitle className="text-2xl font-bold text-primary">
@@ -88,7 +124,7 @@ const Login = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Demo Login Section */}
-            <div className="bg-gradient-secondary rounded-lg p-4 border border-primary/20">
+            <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg p-4 border border-primary/20">
               <h3 className="text-sm font-semibold text-primary mb-2">
                 🚀 Quick Demo Access
               </h3>
@@ -116,7 +152,7 @@ const Login = () => {
             </div>
 
             {/* Regular Login */}
-            <div className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-4">
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">Or login with your account</p>
               </div>
@@ -127,6 +163,7 @@ const Login = () => {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="border-primary/20 focus:border-primary"
+                required
               />
               <Input
                 type="password"
@@ -134,16 +171,19 @@ const Login = () => {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 className="border-primary/20 focus:border-primary"
+                required
               />
+              
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                   <p className="text-red-600 text-sm">{error}</p>
                 </div>
               )}
+              
               <Button 
+                type="submit"
                 className="w-full bg-primary hover:bg-primary/90" 
-                onClick={handleLogin} 
-                disabled={loading}
+                disabled={loading || !email || !password}
                 variant="outline"
               >
                 {loading ? (
@@ -155,18 +195,25 @@ const Login = () => {
                   "Log In"
                 )}
               </Button>
-            </div>
-
-            {/* Demo Setup */}
-            <div className="border-t pt-4">
-              <DemoDataInitializer />
-            </div>
+            </form>
 
             {/* Demo Credentials */}
             <div className="text-center text-xs text-muted-foreground">
               <p className="font-medium">Demo Credentials:</p>
               <p>Student: student@coventry.edu / student123</p>
               <p>Professor: professor@coventry.edu / professor123</p>
+            </div>
+
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                Don't have an account?{" "}
+                <Link 
+                  to={`/signup?role=${role}`} 
+                  className="text-primary hover:underline font-medium"
+                >
+                  Sign up here
+                </Link>
+              </p>
             </div>
           </CardContent>
         </Card>
