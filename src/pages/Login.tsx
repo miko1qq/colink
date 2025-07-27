@@ -8,6 +8,7 @@ import { authService } from "@/lib/supabaseService";
 import { Link } from "react-router-dom";
 import CoventryLogo from "@/components/CoventryLogo";
 import { useToast } from "@/hooks/use-toast";
+import TestRegister from "@/components/TestRegister";
 
 const Login = () => {
   const [searchParams] = useSearchParams();
@@ -217,6 +218,11 @@ const Login = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Test Registration Component - Only in development */}
+        {import.meta.env.DEV && (
+          <TestRegister />
+        )}
       </div>
     </div>
   );

@@ -23,6 +23,7 @@ import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import TestRegister from "./components/TestRegister";
 
 const queryClient = new QueryClient();
 
@@ -165,6 +166,16 @@ const App = () => {
                   <ProtectedRoute>
                     <Messaging />
                   </ProtectedRoute>
+                } 
+              />
+
+              {/* Test Registration (Development Only) */}
+              <Route 
+                path="/test-register" 
+                element={
+                  <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-6">
+                    <TestRegister />
+                  </div>
                 } 
               />
 
