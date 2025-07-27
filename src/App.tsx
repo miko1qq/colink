@@ -25,9 +25,6 @@ const NotFound = React.lazy(() => import("./pages/NotFound"));
 const Login = React.lazy(() => import("./pages/Login"));
 const Signup = React.lazy(() => import("./pages/Signup"));
 
-// Import TestRegister directly (not lazy) since it's small and dev-only
-import TestRegister from "./components/TestRegister";
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -185,16 +182,6 @@ const App = () => {
                     <ProtectedRoute>
                       <Messaging />
                     </ProtectedRoute>
-                  } 
-                />
-
-                {/* Test Registration (Development Only) */}
-                <Route 
-                  path="/test-register" 
-                  element={
-                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-6">
-                      <TestRegister />
-                    </div>
                   } 
                 />
 

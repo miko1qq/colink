@@ -16,7 +16,7 @@ const QuizResults = ({ score, totalQuestions, onContinue, onEarnBadge }: QuizRes
 
   const getScoreColor = () => {
     if (percentage >= 90) return "text-green-600";
-    if (percentage >= 70) return "text-blue-600";
+    if (percentage >= 70) return "text-primary";
     if (percentage >= 50) return "text-yellow-600";
     return "text-red-600";
   };

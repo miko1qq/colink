@@ -6,6 +6,8 @@ import {
   CalendarClock,
   Target,
   User,
+  LogOut,
+  Settings,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,7 +19,10 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useUser } from "@/hooks/useUser";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import notificationSound from "@/assets/notification.mp3";
@@ -63,6 +68,8 @@ const mockData: Notification[] = [
 ];
 
 const TopRightNavigation = () => {
+  const { user, profile, signOut } = useUser();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [audio] = useState(() => new Audio(notificationSound));
   const [level, setLevel] = useState(5);
@@ -81,6 +88,18 @@ const TopRightNavigation = () => {
   };
 
   const xpPercentage = Math.min((xp / 500) * 100, 100);
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
+  };
+
+  const handleProfileClick = () => {
+    const profilePath = profile?.role === 'student' 
+      ? '/student/profile' 
+      : '/professor/profile';
+    navigate(profilePath);
+  };
 
   return (
     <div className="flex items-center gap-2">
@@ -109,21 +128,39 @@ const TopRightNavigation = () => {
         <PopoverTrigger asChild>
           <Button
             variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:text-primary"
+            className="p-1 h-8 w-8 rounded-full hover:ring-2 hover:ring-primary/20"
           >
-            <User className="w-4 h-4" />
+            <Avatar className="h-6 w-6">
+              <AvatarImage src={profile?.avatar_url} alt={profile?.full_name || profile?.name} />
+              <AvatarFallback className="text-xs bg-primary text-white">
+                {(profile?.full_name || profile?.name || 'User').split(' ').map(n => n[0]).join('')}
+              </AvatarFallback>
+            </Avatar>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-48 p-2 bg-white border-primary/20" align="end">
           <div className="space-y-1">
-            <Button variant="ghost" className="w-full justify-start text-sm">
+            <div className="px-2 py-1 text-sm text-muted-foreground border-b">
+              {profile?.full_name || profile?.name || 'User'}
+            </div>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start text-sm"
+              onClick={handleProfileClick}
+            >
+              <User className="w-4 h-4 mr-2" />
               Profile
             </Button>
             <Button variant="ghost" className="w-full justify-start text-sm">
+              <Settings className="w-4 h-4 mr-2" />
               Settings
             </Button>
-            <Button variant="ghost" className="w-full justify-start text-sm text-red-600">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start text-sm text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={handleLogout}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
               Logout
             </Button>
           </div>

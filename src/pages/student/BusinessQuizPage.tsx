@@ -10,8 +10,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { 
   questProgressService, 
   badgeService, 
-  quizService, 
-  profileService 
+  quizService
 } from "@/lib/supabaseService";
 
 const BusinessQuizPage = () => {

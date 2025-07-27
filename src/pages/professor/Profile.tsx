@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { User, BookOpen, Users, TrendingUp, Award, Upload, Edit2, Save, BarChart3, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,14 +6,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/lib/supabaseClient";
-import { profileService } from "@/lib/supabaseService";
+// Removed unused import
+import { useUser } from "@/hooks/useUser";
+import { useToast } from "@/hooks/use-toast";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
 
 const ProfessorProfile = () => {
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const { user, profile, uploadAvatar } = useUser();
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   // Professor data - this would come from Supabase
   const professorData = {
@@ -55,21 +59,49 @@ const ProfessorProfile = () => {
   ];
 
   useEffect(() => {
-    loadProfile();
-  }, []);
+    setLoading(false);
+  }, [profile]);
 
-  const loadProfile = async () => {
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAvatarUploading(true);
+    
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUser(user);
-        const userProfile = await profileService.getProfile(user.id);
-        setProfile(userProfile);
-      }
+      await uploadAvatar(file);
+      toast({
+        title: "Avatar updated",
+        description: "Your profile photo has been updated successfully.",
+      });
     } catch (error) {
-      console.error('Error loading profile:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to update profile photo. Please try again.",
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false);
+      setAvatarUploading(false);
     }
   };
 
@@ -99,15 +131,45 @@ const ProfessorProfile = () => {
             <div className="flex flex-col lg:flex-row items-center gap-8">
               {/* Avatar Section */}
               <div className="text-center">
-                <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-primary/20">
-                  <AvatarImage src={professorData.avatar} alt={professorData.full_name} />
-                  <AvatarFallback className="text-2xl font-bold bg-primary text-white">
-                    {professorData.full_name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <Button variant="outline" size="sm" className="border-primary/20">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Change Photo
+                <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                  <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-primary/20 transition-all group-hover:border-primary/40">
+                    <AvatarImage 
+                      src={profile?.avatar_url || professorData.avatar} 
+                      alt={profile?.full_name || professorData.full_name} 
+                    />
+                    <AvatarFallback className="text-2xl font-bold bg-primary text-white">
+                      {(profile?.full_name || professorData.full_name).split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute inset-0 bg-black/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Upload className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleAvatarUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="border-primary/20"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={avatarUploading}
+                >
+                  {avatarUploading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Change Photo
+                    </>
+                  )}
                 </Button>
               </div>
 
@@ -212,9 +274,9 @@ const ProfessorProfile = () => {
                     <Line 
                       type="monotone" 
                       dataKey="engagement" 
-                      stroke="#003A70" 
+                      stroke="#0388fc" 
                       strokeWidth={3}
-                      dot={{ fill: '#003A70', strokeWidth: 2, r: 6 }}
+                      dot={{ fill: '#0388fc', strokeWidth: 2, r: 6 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -244,7 +306,7 @@ const ProfessorProfile = () => {
                         borderRadius: '8px'
                       }} 
                     />
-                    <Bar dataKey="impact" fill="#003A70" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="impact" fill="#0388fc" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -386,7 +448,7 @@ const ProfessorProfile = () => {
               </div>
               
               <div className="text-center group">
-                <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center text-2xl hover:shadow-lg transition-all duration-300 group-hover:scale-110">
+                <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-primary/10 to-primary/20 rounded-full flex items-center justify-center text-2xl hover:shadow-lg transition-all duration-300 group-hover:scale-110">
                   📚
                 </div>
                 <h4 className="font-medium text-sm mb-1">Innovation in Teaching</h4>
