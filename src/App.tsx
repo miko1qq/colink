@@ -1,3 +1,4 @@
+import React, { Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,26 +7,45 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider"; 
 import { useUser } from "@/hooks/useUser";
 
-// Pages
-import Index from "./pages/Index";
-import StudentDashboard from "./pages/student/Dashboard";
-import ProfessorDashboard from "./pages/professor/Dashboard";
-import Quests from "./pages/student/Quests";
-import BusinessQuizPage from "./pages/student/BusinessQuizPage";
-import Badges from "./pages/student/Badges";
-import Leaderboard from "./pages/student/Leaderboard";
-import StudentProfile from "./pages/student/Profile";
-import ProfessorProfile from "./pages/professor/Profile";
-import Messaging from "./pages/shared/Messaging";
-import QuestBuilder from "./pages/professor/QuestBuilder";
-import Analytics from "./pages/professor/Analytics";
-import FAQ from "./pages/FAQ";
-import NotFound from "./pages/NotFound";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
+// Lazy load pages to prevent issues with complex imports
+const Index = React.lazy(() => import("./pages/Index"));
+const StudentDashboard = React.lazy(() => import("./pages/student/Dashboard"));
+const ProfessorDashboard = React.lazy(() => import("./pages/professor/Dashboard"));
+const Quests = React.lazy(() => import("./pages/student/Quests"));
+const BusinessQuizPage = React.lazy(() => import("./pages/student/BusinessQuizPage"));
+const Badges = React.lazy(() => import("./pages/student/Badges"));
+const Leaderboard = React.lazy(() => import("./pages/student/Leaderboard"));
+const StudentProfile = React.lazy(() => import("./pages/student/Profile"));
+const ProfessorProfile = React.lazy(() => import("./pages/professor/Profile"));
+const Messaging = React.lazy(() => import("./pages/shared/Messaging"));
+const QuestBuilder = React.lazy(() => import("./pages/professor/QuestBuilder"));
+const Analytics = React.lazy(() => import("./pages/professor/Analytics"));
+const FAQ = React.lazy(() => import("./pages/FAQ"));
+const NotFound = React.lazy(() => import("./pages/NotFound"));
+const Login = React.lazy(() => import("./pages/Login"));
+const Signup = React.lazy(() => import("./pages/Signup"));
+
+// Import TestRegister directly (not lazy) since it's small and dev-only
 import TestRegister from "./components/TestRegister";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+// Loading component
+const LoadingSpinner = () => (
+  <div className="min-h-screen bg-gradient-to-br from-primary/5 to-white flex items-center justify-center">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+      <p className="text-muted-foreground">Loading...</p>
+    </div>
+  </div>
+);
 
 // Protected Route Component
 const ProtectedRoute = ({ 
@@ -38,14 +58,7 @@ const ProtectedRoute = ({
   const { user, profile, loading } = useUser();
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!user || !profile) {
@@ -67,121 +80,128 @@ const App = () => {
           <Toaster />
           <Sonner />
 
-          <BrowserRouter>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/faq" element={<FAQ />} />
+          <BrowserRouter
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
+            <Suspense fallback={<LoadingSpinner />}>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/faq" element={<FAQ />} />
 
-              {/* Student Protected Routes */}
-              <Route 
-                path="/student/dashboard" 
-                element={
-                  <ProtectedRoute requiredRole="student">
-                    <StudentDashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/student/quests" 
-                element={
-                  <ProtectedRoute requiredRole="student">
-                    <Quests />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/student/business-quiz" 
-                element={
-                  <ProtectedRoute requiredRole="student">
-                    <BusinessQuizPage />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/student/badges" 
-                element={
-                  <ProtectedRoute requiredRole="student">
-                    <Badges />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/student/leaderboard" 
-                element={
-                  <ProtectedRoute requiredRole="student">
-                    <Leaderboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/student/profile" 
-                element={
-                  <ProtectedRoute requiredRole="student">
-                    <StudentProfile />
-                  </ProtectedRoute>
-                } 
-              />
+                {/* Student Protected Routes */}
+                <Route 
+                  path="/student/dashboard" 
+                  element={
+                    <ProtectedRoute requiredRole="student">
+                      <StudentDashboard />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/student/quests" 
+                  element={
+                    <ProtectedRoute requiredRole="student">
+                      <Quests />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/student/business-quiz" 
+                  element={
+                    <ProtectedRoute requiredRole="student">
+                      <BusinessQuizPage />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/student/badges" 
+                  element={
+                    <ProtectedRoute requiredRole="student">
+                      <Badges />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/student/leaderboard" 
+                  element={
+                    <ProtectedRoute requiredRole="student">
+                      <Leaderboard />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/student/profile" 
+                  element={
+                    <ProtectedRoute requiredRole="student">
+                      <StudentProfile />
+                    </ProtectedRoute>
+                  } 
+                />
 
-              {/* Professor Protected Routes */}
-              <Route 
-                path="/professor/dashboard" 
-                element={
-                  <ProtectedRoute requiredRole="professor">
-                    <ProfessorDashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/professor/quest-builder" 
-                element={
-                  <ProtectedRoute requiredRole="professor">
-                    <QuestBuilder />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/professor/analytics" 
-                element={
-                  <ProtectedRoute requiredRole="professor">
-                    <Analytics />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/professor/profile" 
-                element={
-                  <ProtectedRoute requiredRole="professor">
-                    <ProfessorProfile />
-                  </ProtectedRoute>
-                } 
-              />
+                {/* Professor Protected Routes */}
+                <Route 
+                  path="/professor/dashboard" 
+                  element={
+                    <ProtectedRoute requiredRole="professor">
+                      <ProfessorDashboard />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/professor/quest-builder" 
+                  element={
+                    <ProtectedRoute requiredRole="professor">
+                      <QuestBuilder />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/professor/analytics" 
+                  element={
+                    <ProtectedRoute requiredRole="professor">
+                      <Analytics />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/professor/profile" 
+                  element={
+                    <ProtectedRoute requiredRole="professor">
+                      <ProfessorProfile />
+                    </ProtectedRoute>
+                  } 
+                />
 
-              {/* Shared Protected Routes */}
-              <Route 
-                path="/messaging" 
-                element={
-                  <ProtectedRoute>
-                    <Messaging />
-                  </ProtectedRoute>
-                } 
-              />
+                {/* Shared Protected Routes */}
+                <Route 
+                  path="/messaging" 
+                  element={
+                    <ProtectedRoute>
+                      <Messaging />
+                    </ProtectedRoute>
+                  } 
+                />
 
-              {/* Test Registration (Development Only) */}
-              <Route 
-                path="/test-register" 
-                element={
-                  <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-6">
-                    <TestRegister />
-                  </div>
-                } 
-              />
+                {/* Test Registration (Development Only) */}
+                <Route 
+                  path="/test-register" 
+                  element={
+                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-6">
+                      <TestRegister />
+                    </div>
+                  } 
+                />
 
-              {/* Catch All */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+                {/* Catch All */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
